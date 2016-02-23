@@ -37,6 +37,12 @@ namespace ReadOnlyDictionaryTests
             StorageInialize();
         }
 
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            this.storage.Dispose();
+        }
+
         public abstract void StorageInialize();
 
         protected KeyValuePair<Guid, Book>[] randomData;
@@ -62,7 +68,7 @@ namespace ReadOnlyDictionaryTests
         [TestMethod]
         public void StaticDataTests()
         {
-            var storage = new DictionaryReadOnlyKeyValueStorage<Book>(SampleData());
+            var storage = new InMemoryKeyValueStorage<Book>(SampleData());
 
             Assert.AreEqual(storage.Count, (uint)2);
             Assert.AreEqual(storage.Get(theHobbit.Key), theHobbit.Value);
@@ -72,7 +78,7 @@ namespace ReadOnlyDictionaryTests
 
         public override void StorageInialize()
         {
-            storage = new DictionaryReadOnlyKeyValueStorage<Book>(randomData);
+            storage = new InMemoryKeyValueStorage<Book>(randomData);
         }
     }
 
@@ -84,7 +90,12 @@ namespace ReadOnlyDictionaryTests
             Func<Book, byte[]> serializer = book => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(book));
             Func<byte[], Book> deserializer = bytes => JsonConvert.DeserializeObject<Book>(Encoding.UTF8.GetString(bytes));
 
-            storage = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, deserializer, randomData.LongLength);
+            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, deserializer, randomData.LongLength))
+            {
+
+            }
+
+            storage = new FileIndexKeyValueStorage<Book>("temp.raw", deserializer);
         }
     }
 }

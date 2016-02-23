@@ -9,7 +9,7 @@ using System.IO;
 
 namespace ReadOnlyDictionary
 {
-    public interface IKeyValueStore<TValue>
+    public interface IKeyValueStore<TValue> : IDisposable
     {
         bool ContainsKey(Guid key);
         bool TryGetValue(Guid key, out TValue value);
@@ -32,11 +32,11 @@ namespace ReadOnlyDictionary
         }
     }
 
-    public class DictionaryReadOnlyKeyValueStorage<TValue> : IKeyValueStore<TValue>
+    public class InMemoryKeyValueStorage<TValue> : IKeyValueStore<TValue>
     {
         private readonly Dictionary<Guid, TValue> index;
 
-        public DictionaryReadOnlyKeyValueStorage(IEnumerable<KeyValuePair<Guid, TValue>> values)
+        public InMemoryKeyValueStorage(IEnumerable<KeyValuePair<Guid, TValue>> values)
         {
             this.index = values.ToDictionary(v => v.Key, v => v.Value);
         }
@@ -54,6 +54,10 @@ namespace ReadOnlyDictionary
         public uint Count
         {
             get { return (uint)this.index.LongCount(); }
+        }
+
+        public void Dispose()
+        {
         }
     }
 
@@ -76,12 +80,19 @@ namespace ReadOnlyDictionary
 
             this.index = new Dictionary<Guid, long>();
 
-            if (File.Exists(filename))
+            var fi = new FileInfo(filename);
+            if (fi.Exists)
             {
-                File.Delete(filename);
+                fi.Delete();
             }
 
-            this.mmf = MemoryMappedFile.CreateNew(filename, initialSize, MemoryMappedFileAccess.ReadWrite);
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+
+            this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, filename, initialSize);
+
             this.accessor = mmf.CreateViewAccessor();
 
             var guidBytes = Guid.NewGuid().ToByteArray().Length;
@@ -113,16 +124,16 @@ namespace ReadOnlyDictionary
                 accessor.WriteArray(indexPosition, keyBytes, 0, keyBytes.Length);
                 indexPosition += keyBytes.Length;
             }
-            if (indexPosition != indexSize + sizeof(long))
-            {
-                throw new Exception("Wakka");
-            }
+           
+            this.accessor.Flush();
+
         }
 
         public FileIndexKeyValueStorage(string filename, Func<byte[], TValue> deserializer)
         {
             this.deserializer = deserializer;
-            this.mmf = MemoryMappedFile.OpenExisting(filename, MemoryMappedFileRights.Read);
+            var fi = new FileInfo(filename);
+            this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
             this.accessor = mmf.CreateViewAccessor();
             this.index = new Dictionary<Guid, long>();
 
@@ -131,13 +142,17 @@ namespace ReadOnlyDictionary
 
             // read index after count
             long indexPosition = sizeof(long);
-            foreach (var item in index)
+            var guidBytes = Guid.NewGuid().ToByteArray().Length;
+
+            for(int i = 0; i < count; i++)
             {
-                var keyBytes = item.Key.ToByteArray();
-                accessor.Write(indexPosition, item.Value);
+                var offset = accessor.ReadInt64(indexPosition);
                 indexPosition += sizeof(long);
-                accessor.WriteArray(indexPosition, keyBytes, 0, keyBytes.Length);
+                byte[] keyBytes = new byte[guidBytes];
+                accessor.ReadArray(indexPosition, keyBytes, 0, guidBytes);
                 indexPosition += keyBytes.Length;
+
+                index.Add(new Guid(keyBytes), offset);
             }
         }
 
@@ -171,7 +186,8 @@ namespace ReadOnlyDictionary
 
         public void Dispose()
         {
-            this.accessor.Dispose();
+            this.accessor.Flush();
+            this.accessor.Dispose();            
             this.mmf.Dispose();
         }
     }
@@ -200,5 +216,10 @@ namespace ReadOnlyDictionary
         }
 
         public uint Count { get { return count; } }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
