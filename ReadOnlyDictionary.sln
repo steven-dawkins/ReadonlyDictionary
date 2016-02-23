@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadOnlyDictionary", "ReadOnlyDictionary\ReadOnlyDictionary.csproj", "{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadOnlyDictionaryTests", "ReadOnlyDictionaryTests\ReadOnlyDictionaryTests.csproj", "{48A52ACC-99DE-461B-A299-FFF1B53D28BF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
