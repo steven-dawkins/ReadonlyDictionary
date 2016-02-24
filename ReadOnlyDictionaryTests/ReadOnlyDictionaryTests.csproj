@@ -58,7 +58,8 @@
   </Choose>
   <ItemGroup>
     <Compile Include="SampleData\Book.cs" />
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="SampleData\RandomDataGenerator.cs" />
+    <Compile Include="StorageTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

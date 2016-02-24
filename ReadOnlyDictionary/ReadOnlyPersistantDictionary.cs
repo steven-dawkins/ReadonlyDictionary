@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MPHTest.MPH;
 using System.IO.MemoryMappedFiles;
 using System.IO;
+using ReadOnlyDictionary.Serialization;
 
 namespace ReadOnlyDictionary
 {

@@ -2,35 +2,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ReadOnlyDictionary;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 using ReadOnlyDictionaryTests.SampleData;
-using Newtonsoft.Json;
-using System.Text;
+using ReadOnlyDictionary.Serialization;
 
 
 namespace ReadOnlyDictionaryTests
 {
-    public class RandomDataGenerator
-    {
-        public static readonly KeyValuePair<Guid, Book> theHobbit = new KeyValuePair<Guid, Book>(Guid.Parse("69CA35FD-FF92-4797-9E27-C875544E9D97"), new Book("The Hobbit"));
-        public static readonly KeyValuePair<Guid, Book> theLordOfTheRings = new KeyValuePair<Guid, Book>(Guid.Parse("0B1A41BA-03B2-4293-8DCB-8494F3353668"), new Book("The Lord of the Rings"));
-
-        public static IEnumerable<KeyValuePair<Guid, Book>> SampleData()
-        {
-            yield return theHobbit;
-            yield return theLordOfTheRings;
-        }
-
-        public static IEnumerable<KeyValuePair<Guid, Book>> RandomData(int count)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                yield return new KeyValuePair<Guid, Book>(Guid.NewGuid(), new Book("Book - " + i));
-            }
-        }
-    }
-
     public abstract class TestBase
     {
         [TestInitialize]
@@ -66,7 +44,7 @@ namespace ReadOnlyDictionaryTests
     }
 
     [TestClass]
-    public class DictionaryReadOnly : TestBase
+    public class InMemoryStorageTests : TestBase
     {
         [TestMethod]
         public void StaticDataTests()
@@ -90,7 +68,7 @@ namespace ReadOnlyDictionaryTests
     {
         public override void StorageInitalize()
         {
-            var serializer = new ReadOnlyDictionary.JsonSerializer<Book>();
+            var serializer = new JsonSerializer<Book>();
 
             using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
@@ -106,7 +84,7 @@ namespace ReadOnlyDictionaryTests
     {
         public override void StorageInitalize()
         {
-            var serializer = new ReadOnlyDictionary.ProtobufSerializer<Book>();
+            var serializer = new ProtobufSerializer<Book>();
 
             using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
