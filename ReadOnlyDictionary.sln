@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadOnlyDictionary", "ReadO
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadOnlyDictionaryTests", "ReadOnlyDictionaryTests\ReadOnlyDictionaryTests.csproj", "{48A52ACC-99DE-461B-A299-FFF1B53D28BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadonlyDictionary.REPL", "ReadonlyDictionary.REPL\ReadonlyDictionary.REPL.csproj", "{6A9065EF-FCA1-4556-82F2-DC2A895CBFCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48A52ACC-99DE-461B-A299-FFF1B53D28BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A9065EF-FCA1-4556-82F2-DC2A895CBFCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A9065EF-FCA1-4556-82F2-DC2A895CBFCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A9065EF-FCA1-4556-82F2-DC2A895CBFCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A9065EF-FCA1-4556-82F2-DC2A895CBFCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
