@@ -23,7 +23,7 @@ namespace ReadonlyDictionary.REPL
                 .CreateLogger();
         }
 
-        public enum Mode { InMemory, FileIndexKeyValueStorageNewtonsoft, FileIndexKeyValueStorageProtobuf }
+        public enum Mode { InMemory, FileIndexKeyValueStorageNewtonsoft, FileIndexKeyValueStorageProtobuf, FileIndexKeyValueStorageNetSerializer }
 
         public void RandomData(string modeString, int count)
         {
@@ -31,7 +31,9 @@ namespace ReadonlyDictionary.REPL
 
             Mode mode = (Mode)Enum.Parse(typeof(Mode), modeString);
 
-            CreateStore(randomData, mode);
+            var store = CreateStore(randomData, mode);
+
+            ExerciseStore(randomData, store, mode);
         }
 
         private IKeyValueStore<Book> CreateStore(KeyValuePair<Guid, Book>[] randomData, Mode mode)
@@ -51,6 +53,12 @@ namespace ReadonlyDictionary.REPL
                             var serializer = new ProtobufSerializer<Book>();
 
                             return CreateFileIndexKeyValueStorage(randomData, serializer, "temp2.raw");
+                        }
+                    case Mode.FileIndexKeyValueStorageNetSerializer:
+                        {
+                            var serializer = new NetSerializer<Book>();
+
+                            return CreateFileIndexKeyValueStorage(randomData, serializer, "temp3.raw");
                         }
                     case Mode.InMemory:
                         {

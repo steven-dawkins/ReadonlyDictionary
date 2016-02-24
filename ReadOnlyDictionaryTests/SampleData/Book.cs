@@ -7,13 +7,20 @@ using System.Threading.Tasks;
 
 namespace ReadOnlyDictionaryTests.SampleData
 {
+    [Serializable]
     [ProtoContract]
     public class Book
     {
          [ProtoMember(1)]
         public string Name { get; set; }
 
-        public Book(string name)
+         [ProtoMember(2)]
+         public string Name2 { get; set; }
+
+         [ProtoMember(3)]
+         public string Name3 { get; set; }
+
+        public Book(string name, string name2, string name3)
         {
             if (String.IsNullOrWhiteSpace(name))
             {
@@ -21,11 +28,18 @@ namespace ReadOnlyDictionaryTests.SampleData
             }
 
             this.Name = name;
+            this.Name2 = name2;
+            this.Name3 = name3;
         }
 
         public Book()
         {
 
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Name.GetHashCode();
         }
 
         public override bool Equals(object obj)
