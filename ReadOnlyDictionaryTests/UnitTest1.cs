@@ -11,30 +11,33 @@ using System.Text;
 
 namespace ReadOnlyDictionaryTests
 {
-    public abstract class TestBase
+    public class RandomDataGenerator
     {
-        protected readonly KeyValuePair<Guid, Book> theHobbit = new KeyValuePair<Guid, Book>(Guid.Parse("69CA35FD-FF92-4797-9E27-C875544E9D97"), new Book("The Hobbit"));
-        protected readonly KeyValuePair<Guid, Book> theLordOfTheRings = new KeyValuePair<Guid, Book>(Guid.Parse("0B1A41BA-03B2-4293-8DCB-8494F3353668"), new Book("The Lord of the Rings"));
+        public static readonly KeyValuePair<Guid, Book> theHobbit = new KeyValuePair<Guid, Book>(Guid.Parse("69CA35FD-FF92-4797-9E27-C875544E9D97"), new Book("The Hobbit"));
+        public static readonly KeyValuePair<Guid, Book> theLordOfTheRings = new KeyValuePair<Guid, Book>(Guid.Parse("0B1A41BA-03B2-4293-8DCB-8494F3353668"), new Book("The Lord of the Rings"));
 
-        protected IEnumerable<KeyValuePair<Guid, Book>> SampleData()
+        public static IEnumerable<KeyValuePair<Guid, Book>> SampleData()
         {
             yield return theHobbit;
             yield return theLordOfTheRings;
         }
 
-        protected IEnumerable<KeyValuePair<Guid, Book>> RandomData(int count)
+        public static IEnumerable<KeyValuePair<Guid, Book>> RandomData(int count)
         {
             for (int i = 0; i < count; i++)
             {
                 yield return new KeyValuePair<Guid, Book>(Guid.NewGuid(), new Book("Book - " + i));
             }
         }
+    }
 
+    public abstract class TestBase
+    {
         [TestInitialize]
         public void TestInitialize()
         {
-            randomData = RandomData(100000).ToArray();
-            StorageInialize();
+            randomData = RandomDataGenerator.RandomData(100000).ToArray();
+            StorageInitalize();
         }
 
         [TestCleanup]
@@ -43,7 +46,7 @@ namespace ReadOnlyDictionaryTests
             this.storage.Dispose();
         }
 
-        public abstract void StorageInialize();
+        public abstract void StorageInitalize();
 
         protected KeyValuePair<Guid, Book>[] randomData;
         protected IKeyValueStore<Book> storage;
@@ -68,34 +71,49 @@ namespace ReadOnlyDictionaryTests
         [TestMethod]
         public void StaticDataTests()
         {
-            var storage = new InMemoryKeyValueStorage<Book>(SampleData());
+            var storage = new InMemoryKeyValueStorage<Book>(RandomDataGenerator.SampleData());
 
             Assert.AreEqual(storage.Count, (uint)2);
-            Assert.AreEqual(storage.Get(theHobbit.Key), theHobbit.Value);
-            Assert.AreEqual(storage.Get(theLordOfTheRings.Key), theLordOfTheRings.Value);
+            Assert.AreEqual(storage.Get(RandomDataGenerator.theHobbit.Key), RandomDataGenerator.theHobbit.Value);
+            Assert.AreEqual(storage.Get(RandomDataGenerator.theLordOfTheRings.Key), RandomDataGenerator.theLordOfTheRings.Value);
             Assert.AreEqual(storage.Get(Guid.NewGuid()), null);
         }
 
-        public override void StorageInialize()
+        public override void StorageInitalize()
         {
             storage = new InMemoryKeyValueStorage<Book>(randomData);
         }
     }
 
     [TestClass]
-    public class FileIndexKeyValueStorage : TestBase
+    public class FileIndexKeyValueStorageJson : TestBase
     {
-        public override void StorageInialize()
+        public override void StorageInitalize()
         {
-            Func<Book, byte[]> serializer = book => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(book));
-            Func<byte[], Book> deserializer = bytes => JsonConvert.DeserializeObject<Book>(Encoding.UTF8.GetString(bytes));
+            var serializer = new ReadOnlyDictionary.JsonSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, deserializer, randomData.LongLength))
+            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            storage = new FileIndexKeyValueStorage<Book>("temp.raw", deserializer);
+            storage = new FileIndexKeyValueStorage<Book>("temp.raw", serializer);
+        }
+    }
+
+    [TestClass]
+    public class FileIndexKeyValueStorageProtobuf : TestBase
+    {
+        public override void StorageInitalize()
+        {
+            var serializer = new ReadOnlyDictionary.ProtobufSerializer<Book>();
+
+            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
+            {
+
+            }
+
+            storage = new FileIndexKeyValueStorage<Book>("temp.raw", serializer);
         }
     }
 }

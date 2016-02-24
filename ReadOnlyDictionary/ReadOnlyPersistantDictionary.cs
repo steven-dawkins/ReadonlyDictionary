@@ -32,32 +32,57 @@ namespace ReadOnlyDictionary
         }
     }
 
-    public class InMemoryKeyValueStorage<TValue> : IKeyValueStore<TValue>
+    public interface IIndexerFactory
     {
-        private readonly Dictionary<Guid, TValue> index;
+        IIndexer Build(IEnumerable<Guid> values);
+        IIndexer Load(MemoryMappedViewAccessor view);
+    }
 
-        public InMemoryKeyValueStorage(IEnumerable<KeyValuePair<Guid, TValue>> values)
+    public interface IIndexer
+    {
+        long GetIndexOf(Guid key);
+        void WriteAt(long offset, MemoryMappedViewAccessor view);
+        long Size();
+    }
+
+    public class DictionaryIndexerFactor : IIndexerFactory
+    {
+        public IIndexer Build(IEnumerable<Guid> values)
         {
-            this.index = values.ToDictionary(v => v.Key, v => v.Value);
+            throw new NotImplementedException();
         }
 
-        public bool ContainsKey(Guid key)
+        public IIndexer Load(MemoryMappedViewAccessor view)
         {
-            return this.index.ContainsKey(key);
+            throw new NotImplementedException();
+        }
+    }
+
+    public class DictionaryIndexer : IIndexer
+    {
+        private readonly Dictionary<Guid, long> index;
+
+        public DictionaryIndexer(IEnumerable<Guid> values)
+        {
+            long count = 0;
+            this.index = values.ToDictionary(v => v, v => count++);
         }
 
-        public bool TryGetValue(Guid key, out TValue value)
+        public long GetIndexOf(Guid key)
         {
-            return this.index.TryGetValue(key, out value);
+            return this.index[key];
         }
 
-        public uint Count
+        public void WriteAt(long offset, MemoryMappedViewAccessor view)
         {
-            get { return (uint)this.index.LongCount(); }
+            throw new NotImplementedException();
         }
 
-        public void Dispose()
+        public long Size()
         {
+             var guidBytes = Guid.NewGuid().ToByteArray().Length;
+
+             return this.index.Count * (guidBytes + sizeof(long));
         }
     }
 
@@ -66,17 +91,16 @@ namespace ReadOnlyDictionary
         private readonly Dictionary<Guid, long> index;
         private readonly MemoryMappedFile mmf;
         private readonly MemoryMappedViewAccessor accessor;
-        private readonly Func<byte[], TValue> deserializer;
+        private readonly ISerializer<TValue> serializer;
 
         public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<Guid, TValue>> values, 
             string filename, 
             long initialSize, 
-            Func<TValue, byte[]> serializer, 
-            Func<byte[], TValue> deserializer,
+            ISerializer<TValue> serializer,
             long count)
         {
-            this.deserializer = deserializer;
+            this.serializer = serializer;
 
             this.index = new Dictionary<Guid, long>();
 
@@ -103,7 +127,7 @@ namespace ReadOnlyDictionary
             foreach(var item in values)
             {
                 var value = item.Value;
-                var serialized = serializer(value);
+                var serialized = serializer.Serialize(value);
                 accessor.Write(position, serialized.Length);
                 accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
 
@@ -126,12 +150,26 @@ namespace ReadOnlyDictionary
             }
            
             this.accessor.Flush();
-
         }
 
-        public FileIndexKeyValueStorage(string filename, Func<byte[], TValue> deserializer)
+        private static FileInfo PrepareFileForWriting(string filename)
         {
-            this.deserializer = deserializer;
+            var fi = new FileInfo(filename);
+            if (fi.Exists)
+            {
+                fi.Delete();
+            }
+
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+            return fi;
+        }
+
+        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer)
+        {
+            this.serializer = serializer;
             var fi = new FileInfo(filename);
             this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
             this.accessor = mmf.CreateViewAccessor();
@@ -169,7 +207,7 @@ namespace ReadOnlyDictionary
                 var serializedSize = this.accessor.ReadInt32(index);
                 byte[] serialized = new byte[serializedSize];
                 this.accessor.ReadArray(index + sizeof(Int32), serialized, 0, serializedSize);
-                value = deserializer(serialized);
+                value = serializer.Deserialize(serialized);
                 return true;
             }
             else
@@ -192,34 +230,102 @@ namespace ReadOnlyDictionary
         }
     }
 
-    public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
-    {
-        private readonly MinPerfectHash hashFunction;
-        private readonly uint count;
+    //public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
+    //{
+    //    private readonly MinPerfectHash hashFunction;
+    //    private readonly uint count;
+    //    private readonly Func<byte[], TValue> deserializer;
+    //    private MemoryMappedFile mmf;
+    //    private MemoryMappedViewAccessor accessor;
 
-        public MinPerfectHashKeyValueStorage(IEnumerable<KeyValuePair<Guid, TValue>> values, uint count)
-        {
-            var keyGenerator = new MphKeySource<Guid>(values.Select(v => v.Key), count);
+    //    public MinPerfectHashKeyValueStorage(
+    //        IEnumerable<KeyValuePair<Guid, TValue>> values,
+    //        uint count,
+    //        string filename,
+    //        long initialSize,
+    //        Func<TValue, byte[]> serializer,
+    //        Func<byte[], TValue> deserializer)
+    //    {
+    //        var keyGenerator = new MphKeySource<Guid>(values.Select(v => v.Key), count);
 
-            this.hashFunction = MinPerfectHash.Create(keyGenerator, 1);
-            this.count = count;
-        }
+    //        this.hashFunction = MinPerfectHash.Create(keyGenerator, 1);
+    //        this.count = count;
 
-        public bool ContainsKey(Guid key)
-        {
-            throw new NotImplementedException();
-        }
+    //        this.deserializer = deserializer;
 
-        public bool TryGetValue(Guid key, out TValue value)
-        {
-            throw new NotImplementedException();
-        }
+    //        var fi = PrepareFileForWriting(filename);
 
-        public uint Count { get { return count; } }
+    //        this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, filename, initialSize);
 
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-    }
+    //        this.accessor = mmf.CreateViewAccessor();
+
+    //        var guidBytes = Guid.NewGuid().ToByteArray().Length;
+    //        // allocate space for index
+    //        long indexSize = count * (guidBytes + sizeof(long));
+    //        long position = indexSize + sizeof(long);
+
+    //        this.index = new Dictionary<Guid, long>();
+
+    //        foreach (var item in values)
+    //        {
+    //            var value = item.Value;
+    //            var serialized = serializer(value);
+    //            accessor.Write(position, serialized.Length);
+    //            accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
+
+    //            index.Add(item.Key, position);
+    //            position += serialized.Length + sizeof(Int32);
+    //        }
+
+    //        // store count in file
+    //        accessor.Write(0, count);
+
+    //        // write index after count
+    //        long indexPosition = sizeof(long);
+    //        foreach (var item in index)
+    //        {
+    //            var keyBytes = item.Key.ToByteArray();
+    //            accessor.Write(indexPosition, item.Value);
+    //            indexPosition += sizeof(long);
+    //            accessor.WriteArray(indexPosition, keyBytes, 0, keyBytes.Length);
+    //            indexPosition += keyBytes.Length;
+    //        }
+
+    //        this.accessor.Flush();
+    //    }
+
+    //    public bool ContainsKey(Guid key)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public bool TryGetValue(Guid key, out TValue value)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public uint Count { get { return count; } }
+
+    //    public void Dispose()
+    //    {
+    //        this.accessor.Flush();
+    //        this.accessor.Dispose();
+    //        this.mmf.Dispose();
+    //    }
+
+    //    private static FileInfo PrepareFileForWriting(string filename)
+    //    {
+    //        var fi = new FileInfo(filename);
+    //        if (fi.Exists)
+    //        {
+    //            fi.Delete();
+    //        }
+
+    //        if (!fi.Directory.Exists)
+    //        {
+    //            fi.Directory.Create();
+    //        }
+    //        return fi;
+    //    }
+    //}
 }

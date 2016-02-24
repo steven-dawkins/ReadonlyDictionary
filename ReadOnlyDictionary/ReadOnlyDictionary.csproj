@@ -34,6 +34,13 @@
     <Reference Include="Mph">
       <HintPath>..\packages\Mph.1.0.5742.27829\lib\net45\Mph.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -43,6 +50,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="InMemoryKeyValueStorage.cs" />
+    <Compile Include="JsonSerializer.cs" />
     <Compile Include="MphKeySource.cs" />
     <Compile Include="MPH\BitArray.cs" />
     <Compile Include="MPH\BitBool.cs" />

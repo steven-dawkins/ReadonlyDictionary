@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProtoBuf;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,9 +7,11 @@ using System.Threading.Tasks;
 
 namespace ReadOnlyDictionaryTests.SampleData
 {
+    [ProtoContract]
     public class Book
     {
-        public readonly string Name;
+         [ProtoMember(1)]
+        public string Name { get; set; }
 
         public Book(string name)
         {
@@ -18,6 +21,11 @@ namespace ReadOnlyDictionaryTests.SampleData
             }
 
             this.Name = name;
+        }
+
+        public Book()
+        {
+
         }
 
         public override bool Equals(object obj)
