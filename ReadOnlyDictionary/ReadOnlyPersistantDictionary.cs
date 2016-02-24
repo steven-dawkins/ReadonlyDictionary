@@ -19,16 +19,16 @@ namespace ReadOnlyDictionary
 
     public static class IKeyValueStoreExtensions
     {
-        public static TValue Get<TValue>(this IKeyValueStore<TValue> store, Guid key) where TValue: class
+        public static T Get<T>(this IKeyValueStore<T> store, Guid key)
         {
-            TValue temp;
+            T temp;
             if (store.TryGetValue(key, out temp))
             {
                 return temp;
             }
             else
             {
-                return null;
+                return default(T);
             }
         }
     }

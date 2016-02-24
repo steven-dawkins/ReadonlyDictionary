@@ -23,7 +23,7 @@ namespace ReadonlyDictionary.REPL
                 .CreateLogger();
         }
 
-        public enum Mode { InMemory, FileIndexKeyValueStorageNewtonsoft, FileIndexKeyValueStorageProtobuf, FileIndexKeyValueStorageNetSerializer }
+        public enum Mode { InMemory, FileIndexKeyValueStorageNewtonsoft, FileIndexKeyValueStorageProtobuf, FileIndexKeyValueStorageNetSerializer, FileIndexKeyValueStorageMarshal }
 
         public void RandomData(string modeString, int count)
         {
@@ -59,6 +59,12 @@ namespace ReadonlyDictionary.REPL
                             var serializer = new NetSerializer<Book>();
 
                             return CreateFileIndexKeyValueStorage(randomData, serializer, "temp3.raw");
+                        }
+                    case Mode.FileIndexKeyValueStorageMarshal:
+                        {
+                            var serializer = new MarshalSerializer<Book>();
+
+                            return CreateFileIndexKeyValueStorage(randomData, serializer, "temp4.raw");
                         }
                     case Mode.InMemory:
                         {

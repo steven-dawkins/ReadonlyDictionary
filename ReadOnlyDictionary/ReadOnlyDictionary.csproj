@@ -70,6 +70,7 @@
     <Compile Include="ReadOnlyPersistantDictionaryFacade.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="Serialization\NetSerializer.cs" />
+    <Compile Include="Serialization\MarshalSerializer.cs" />
     <Compile Include="Serialization\ProtobufSerializer.cs" />
   </ItemGroup>
   <ItemGroup>

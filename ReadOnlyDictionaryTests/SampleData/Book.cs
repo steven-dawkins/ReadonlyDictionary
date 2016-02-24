@@ -9,10 +9,10 @@ namespace ReadOnlyDictionaryTests.SampleData
 {
     [Serializable]
     [ProtoContract]
-    public class Book
+    public struct Book
     {
          [ProtoMember(1)]
-        public string Name { get; set; }
+         public string Name { get; set; }
 
          [ProtoMember(2)]
          public string Name2 { get; set; }
@@ -20,8 +20,10 @@ namespace ReadOnlyDictionaryTests.SampleData
          [ProtoMember(3)]
          public string Name3 { get; set; }
 
-        public Book(string name, string name2, string name3)
+         public Book(string name, string name2, string name3)
+             : this()
         {
+
             if (String.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Empty name", "name");
@@ -32,11 +34,6 @@ namespace ReadOnlyDictionaryTests.SampleData
             this.Name3 = name3;
         }
 
-        public Book()
-        {
-
-        }
-
         public override int GetHashCode()
         {
             return this.Name.GetHashCode();
@@ -44,15 +41,14 @@ namespace ReadOnlyDictionaryTests.SampleData
 
         public override bool Equals(object obj)
         {
-            var b2 = obj as Book;
-
-            if (b2 != null)
+            if (obj is Book)
             {
+                var b2 = (Book)obj;
                 return this.Name == b2.Name;
             }
             else
             {
-                return base.Equals(b2);
+                return base.Equals(obj);
             }
         }
 
