@@ -1,0 +1,5 @@
+version: 1.0.{build}
+build:
+  publish_nuget: true
+  publish_nuget_symbols: true
+  verbosity: minimal
