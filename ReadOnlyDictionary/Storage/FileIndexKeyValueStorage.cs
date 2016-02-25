@@ -1,12 +1,22 @@
-﻿using ReadOnlyDictionary.Serialization;
+﻿using Newtonsoft.Json;
+using ReadOnlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace ReadOnlyDictionary.Storage
 {
+    internal struct Header
+    {
+        public long Count;
+        public long IndexPosition;
+        public long DataPosition;
+        public int IndexLength;
+    }
+
     public class FileIndexKeyValueStorage<TValue> : IKeyValueStore<TValue>, IDisposable
     {
         private readonly Dictionary<Guid, long> index;
@@ -27,7 +37,7 @@ namespace ReadOnlyDictionary.Storage
 
             var fi = new FileInfo(filename);
             if (fi.Exists)
-            {
+            {  
                 fi.Delete();
             }
 
@@ -40,10 +50,11 @@ namespace ReadOnlyDictionary.Storage
 
             this.accessor = mmf.CreateViewAccessor();
 
-            var guidBytes = Guid.NewGuid().ToByteArray().Length;
+            var header = new Header();
+            
             // allocate space for index
-            long indexSize = count * (guidBytes + sizeof(long));
-            long position = indexSize + sizeof(long);
+            long position = Marshal.SizeOf(typeof(Header));
+            header.DataPosition = position;
 
             foreach (var item in values)
             {
@@ -56,19 +67,14 @@ namespace ReadOnlyDictionary.Storage
                 position += serialized.Length + sizeof(Int32);
             }
 
-            // store count in file
-            accessor.Write(0, count);
+            header.IndexPosition = position;
+            var indexJson = JsonConvert.SerializeObject(this.index);
+            header.IndexLength = indexJson.Length;
+            accessor.WriteArray(position, indexJson.ToCharArray(), 0, indexJson.Length);
 
-            // write index after count
-            long indexPosition = sizeof(long);
-            foreach (var item in index)
-            {
-                var keyBytes = item.Key.ToByteArray();
-                accessor.Write(indexPosition, item.Value);
-                indexPosition += sizeof(long);
-                accessor.WriteArray(indexPosition, keyBytes, 0, keyBytes.Length);
-                indexPosition += keyBytes.Length;
-            }
+            // store header in file
+            header.Count = count;
+            accessor.Write(0, ref header);
 
             this.accessor.Flush();
         }
@@ -97,22 +103,13 @@ namespace ReadOnlyDictionary.Storage
             this.index = new Dictionary<Guid, long>();
 
             // file begins with count
-            var count = accessor.ReadInt64(0);
+            Header header;
+            accessor.Read<Header>(0, out header);
 
-            // read index after count
-            long indexPosition = sizeof(long);
-            var guidBytes = Guid.NewGuid().ToByteArray().Length;
-
-            for (int i = 0; i < count; i++)
-            {
-                var offset = accessor.ReadInt64(indexPosition);
-                indexPosition += sizeof(long);
-                byte[] keyBytes = new byte[guidBytes];
-                accessor.ReadArray(indexPosition, keyBytes, 0, guidBytes);
-                indexPosition += keyBytes.Length;
-
-                index.Add(new Guid(keyBytes), offset);
-            }
+            char[] indexJsonCharacters = new char[header.IndexLength];
+            accessor.ReadArray(header.IndexPosition, indexJsonCharacters, 0, header.IndexLength);
+            var indexJson = new string(indexJsonCharacters);
+            this.index = JsonConvert.DeserializeObject<Dictionary<Guid, long>>(indexJson);
         }
 
         public bool ContainsKey(Guid key)
