@@ -33,9 +33,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mph">
-      <HintPath>..\packages\Mph.1.0.5742.27829\lib\net45\Mph.dll</HintPath>
-    </Reference>
     <Reference Include="NetSerializer">
       <HintPath>..\packages\NetSerializer.4.0.0.0\lib\net45\NetSerializer.dll</HintPath>
     </Reference>
