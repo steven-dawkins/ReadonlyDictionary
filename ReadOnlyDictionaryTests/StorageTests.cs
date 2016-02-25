@@ -28,7 +28,7 @@ namespace ReadOnlyDictionaryTests
         public abstract void StorageInitalize();
 
         protected KeyValuePair<Guid, Book>[] randomData;
-        protected IKeyValueStore<Book> storage;
+        protected IKeyValueStore<Guid, Book> storage;
 
         [TestMethod]
         public void ExerciseRandomData()
@@ -50,7 +50,7 @@ namespace ReadOnlyDictionaryTests
         [TestMethod]
         public void StaticDataTests()
         {
-            var storage = new InMemoryKeyValueStorage<Book>(RandomDataGenerator.SampleData());
+            var storage = new InMemoryKeyValueStorage<Guid, Book>(RandomDataGenerator.SampleData());
 
             Assert.AreEqual(storage.Count, (uint)2);
             Assert.AreEqual(storage.Get(RandomDataGenerator.theHobbit.Key), RandomDataGenerator.theHobbit.Value);
@@ -60,7 +60,7 @@ namespace ReadOnlyDictionaryTests
 
         public override void StorageInitalize()
         {
-            storage = new InMemoryKeyValueStorage<Book>(randomData);
+            storage = new InMemoryKeyValueStorage<Guid, Book>(randomData);
         }
     }
 
@@ -71,12 +71,12 @@ namespace ReadOnlyDictionaryTests
         {
             var serializer = new JsonSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
+            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            storage = new FileIndexKeyValueStorage<Book>("temp.raw", serializer);
+            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
         }
     }
 
@@ -87,12 +87,12 @@ namespace ReadOnlyDictionaryTests
         {
             var serializer = new ProtobufSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
+            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            storage = new FileIndexKeyValueStorage<Book>("temp.raw", serializer);
+            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
         }
     }
 
@@ -103,12 +103,12 @@ namespace ReadOnlyDictionaryTests
         {
             var serializer = new NetSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
+            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            storage = new FileIndexKeyValueStorage<Book>("temp.raw", serializer);
+            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
         }
     }
 }

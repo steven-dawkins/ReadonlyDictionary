@@ -2,16 +2,16 @@
 
 namespace ReadOnlyDictionary.Storage
 {
-    public interface IKeyValueStore<TValue> : IDisposable
+    public interface IKeyValueStore<TKey, TValue> : IDisposable
     {
-        bool ContainsKey(Guid key);
-        bool TryGetValue(Guid key, out TValue value);
+        bool ContainsKey(TKey key);
+        bool TryGetValue(TKey key, out TValue value);
         uint Count { get; }
     }
 
     public static class IKeyValueStoreExtensions
     {
-        public static T Get<T>(this IKeyValueStore<T> store, Guid key)
+        public static T Get<T, TKey>(this IKeyValueStore<TKey, T> store, TKey key)
         {
             T temp;
             if (store.TryGetValue(key, out temp))

@@ -17,15 +17,15 @@ namespace ReadOnlyDictionary.Storage
         public int IndexLength;
     }
 
-    public class FileIndexKeyValueStorage<TValue> : IKeyValueStore<TValue>, IDisposable
+    public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
-        private readonly Dictionary<Guid, long> index;
+        private readonly Dictionary<TKey, long> index;
         private readonly MemoryMappedFile mmf;
         private readonly MemoryMappedViewAccessor accessor;
         private readonly ISerializer<TValue> serializer;
 
         public FileIndexKeyValueStorage(
-            IEnumerable<KeyValuePair<Guid, TValue>> values,
+            IEnumerable<KeyValuePair<TKey, TValue>> values,
             string filename,
             long initialSize,
             ISerializer<TValue> serializer,
@@ -33,7 +33,7 @@ namespace ReadOnlyDictionary.Storage
         {
             this.serializer = serializer;
 
-            this.index = new Dictionary<Guid, long>();
+            this.index = new Dictionary<TKey, long>();
 
             var fi = new FileInfo(filename);
             if (fi.Exists)
@@ -99,8 +99,7 @@ namespace ReadOnlyDictionary.Storage
             this.serializer = serializer;
             var fi = new FileInfo(filename);
             this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
-            this.accessor = mmf.CreateViewAccessor();
-            this.index = new Dictionary<Guid, long>();
+            this.accessor = mmf.CreateViewAccessor();            
 
             // file begins with count
             Header header;
@@ -109,15 +108,15 @@ namespace ReadOnlyDictionary.Storage
             char[] indexJsonCharacters = new char[header.IndexLength];
             accessor.ReadArray(header.IndexPosition, indexJsonCharacters, 0, header.IndexLength);
             var indexJson = new string(indexJsonCharacters);
-            this.index = JsonConvert.DeserializeObject<Dictionary<Guid, long>>(indexJson);
+            this.index = JsonConvert.DeserializeObject<Dictionary<TKey, long>>(indexJson);
         }
 
-        public bool ContainsKey(Guid key)
+        public bool ContainsKey(TKey key)
         {
             return this.index.ContainsKey(key);
         }
 
-        public bool TryGetValue(Guid key, out TValue value)
+        public bool TryGetValue(TKey key, out TValue value)
         {
             long index;
             if (this.index.TryGetValue(key, out index))

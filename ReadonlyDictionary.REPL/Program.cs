@@ -37,7 +37,7 @@ namespace ReadonlyDictionary.REPL
             ExerciseStore(randomData, store, mode);
         }
 
-        private IKeyValueStore<Book> CreateStore(KeyValuePair<Guid, Book>[] randomData, Mode mode)
+        private IKeyValueStore<Guid, Book> CreateStore(KeyValuePair<Guid, Book>[] randomData, Mode mode)
         {
             using (logger.BeginTimedOperation("Create store with " + randomData.Length + " items", mode.ToString()))
             {
@@ -69,7 +69,7 @@ namespace ReadonlyDictionary.REPL
                         }
                     case Mode.InMemory:
                         {
-                            return new InMemoryKeyValueStorage<Book>(randomData);
+                            return new InMemoryKeyValueStorage<Guid, Book>(randomData);
                         }
                     default:
                         throw new Exception("Unexpected storage mode: " + mode);
@@ -89,7 +89,7 @@ namespace ReadonlyDictionary.REPL
             }
         }
 
-        private void ExerciseStore(KeyValuePair<Guid, Book>[] randomData, IKeyValueStore<Book> store, Mode mode)
+        private void ExerciseStore(KeyValuePair<Guid, Book>[] randomData, IKeyValueStore<Guid, Book> store, Mode mode)
         {
             using (logger.BeginTimedOperation("Exercise store with " + randomData.Length + " items", mode.ToString()))
             {
@@ -105,26 +105,26 @@ namespace ReadonlyDictionary.REPL
             }
         }
 
-        private static IKeyValueStore<Book> CreateFileIndexKeyValueStorage(KeyValuePair<Guid, Book>[] randomData, ISerializer<Book> serializer, string filename)
+        private static IKeyValueStore<Guid, Book> CreateFileIndexKeyValueStorage(KeyValuePair<Guid, Book>[] randomData, ISerializer<Book> serializer, string filename)
         {
-            IKeyValueStore<Book> store;
-            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, filename, 100 * 1024 * 1024, serializer, randomData.LongLength))
+            IKeyValueStore<Guid, Book> store;
+            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, filename, 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            store = new FileIndexKeyValueStorage<Book>(filename, serializer);
+            store = new FileIndexKeyValueStorage<Guid, Book>(filename, serializer);
             return store;
         }
     }
 
     class Program
     {
-        public class StorageWrapper<T>
+        public class StorageWrapper<TKey, T>
         {
-            private readonly IKeyValueStore<T> store;
+            private readonly IKeyValueStore<TKey, T> store;
 
-            public StorageWrapper(IKeyValueStore<T> store)
+            public StorageWrapper(IKeyValueStore<TKey, T> store)
             {
                 this.store = store;
             }
@@ -135,7 +135,7 @@ namespace ReadonlyDictionary.REPL
             var repl = new Replify.ClearScriptRepl();
 
             var randomData = RandomDataGenerator.RandomData(100000).ToArray();
-            var storage = new InMemoryKeyValueStorage<Book>(randomData);
+            var storage = new InMemoryKeyValueStorage<Guid, Book>(randomData);
 
             repl.AddHostObject("inmemory", storage);
             repl.AddHostObject("Mode", typeof(Tester.Mode));
