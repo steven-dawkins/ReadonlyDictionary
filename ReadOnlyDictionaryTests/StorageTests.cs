@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ReadOnlyDictionaryTests.SampleData;
 using ReadOnlyDictionary.Serialization;
+using ReadOnlyDictionary.Storage;
 
 
 namespace ReadOnlyDictionaryTests
@@ -38,7 +39,7 @@ namespace ReadOnlyDictionaryTests
             {
                 var item = randomData[i];
                 Assert.AreEqual(item.Value, storage.Get(item.Key));
-                Assert.AreEqual(null, storage.Get(Guid.NewGuid()));
+                Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
             }
         }
     }
@@ -54,7 +55,7 @@ namespace ReadOnlyDictionaryTests
             Assert.AreEqual(storage.Count, (uint)2);
             Assert.AreEqual(storage.Get(RandomDataGenerator.theHobbit.Key), RandomDataGenerator.theHobbit.Value);
             Assert.AreEqual(storage.Get(RandomDataGenerator.theLordOfTheRings.Key), RandomDataGenerator.theLordOfTheRings.Value);
-            Assert.AreEqual(storage.Get(Guid.NewGuid()), null);
+            Assert.AreEqual(storage.Get(Guid.NewGuid()), default(Book));
         }
 
         public override void StorageInitalize()
@@ -85,6 +86,22 @@ namespace ReadOnlyDictionaryTests
         public override void StorageInitalize()
         {
             var serializer = new ProtobufSerializer<Book>();
+
+            using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
+            {
+
+            }
+
+            storage = new FileIndexKeyValueStorage<Book>("temp.raw", serializer);
+        }
+    }
+
+    [TestClass]
+    public class FileIndexKeyValueStorageNetSerializer : TestBase
+    {
+        public override void StorageInitalize()
+        {
+            var serializer = new NetSerializer<Book>();
 
             using (var temp = new FileIndexKeyValueStorage<Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
             {

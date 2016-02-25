@@ -53,7 +53,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="InMemoryKeyValueStorage.cs" />
+    <Compile Include="Storage\FileIndexKeyValueStorage.cs" />
+    <Compile Include="Storage\IKeyValueStore.cs" />
+    <Compile Include="Storage\InMemoryKeyValueStorage.cs" />
     <Compile Include="Serialization\JsonSerializer.cs" />
     <Compile Include="MphKeySource.cs" />
     <Compile Include="MPH\BitArray.cs" />
