@@ -1,4 +1,5 @@
-﻿using ProtoBuf;
+﻿using Newtonsoft.Json;
+using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,17 +12,18 @@ namespace ReadOnlyDictionaryTests.SampleData
     [ProtoContract]
     public struct Book
     {
-         [ProtoMember(1)]
-         public string Name { get; set; }
+        [ProtoMember(1)]
+        public string Name { get; private set; }
 
-         [ProtoMember(2)]
-         public string Name2 { get; set; }
+        [ProtoMember(2)]
+        public string Name2 { get; private set; }
 
-         [ProtoMember(3)]
-         public string Name3 { get; set; }
+        [ProtoMember(3)]
+        public string Name3 { get; private set; }
 
-         public Book(string name, string name2, string name3)
-             : this()
+        [JsonConstructor]
+        public Book(string name, string name2, string name3)
+            : this()
         {
 
             if (String.IsNullOrWhiteSpace(name))
