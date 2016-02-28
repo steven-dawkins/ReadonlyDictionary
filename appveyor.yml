@@ -4,7 +4,7 @@ nuget:
   project_feed: true
 install:
   choco install gitlink
-after_build:
+before_package:
   - dir "C:\projects\readonlydictionary\ReadOnlyDictionary\bin\Release\"
   - gitlink .
   
