@@ -3,7 +3,8 @@ nuget:
   project_feed: true
 install:
   choco install gitlink
-before_deploy:
+after_build:
+  dir C:\projects\readonlydictionary\ReadOnlyDictionary\bin\Release\
   gitlink .
 build:
   publish_nuget: true
