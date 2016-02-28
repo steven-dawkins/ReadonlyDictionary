@@ -46,7 +46,7 @@ namespace ReadOnlyDictionary.Storage
                 fi.Directory.Create();
             }
 
-            this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.FullName, initialSize);
+            this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, initialSize);
 
             this.accessor = mmf.CreateViewAccessor();
 
