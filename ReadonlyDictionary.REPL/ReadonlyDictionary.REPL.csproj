@@ -75,13 +75,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ReadOnlyDictionaryTests\ReadOnlyDictionaryTests.csproj">
+    <ProjectReference Include="..\ReadOnlyDictionaryTests\ReadonlyDictionaryTests.csproj">
       <Project>{48a52acc-99de-461b-a299-fff1b53d28bf}</Project>
-      <Name>ReadOnlyDictionaryTests</Name>
+      <Name>ReadonlyDictionaryTests</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ReadOnlyDictionary\ReadOnlyDictionary.csproj">
+    <ProjectReference Include="..\ReadOnlyDictionary\ReadonlyDictionary.csproj">
       <Project>{2c221f92-7ae8-43cd-9783-6d8431d0a1de}</Project>
-      <Name>ReadOnlyDictionary</Name>
+      <Name>ReadonlyDictionary</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

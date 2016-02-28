@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadOnlyDictionary", "ReadOnlyDictionary\ReadOnlyDictionary.csproj", "{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadonlyDictionary", "ReadOnlyDictionary\ReadonlyDictionary.csproj", "{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadOnlyDictionaryTests", "ReadOnlyDictionaryTests\ReadOnlyDictionaryTests.csproj", "{48A52ACC-99DE-461B-A299-FFF1B53D28BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadonlyDictionaryTests", "ReadOnlyDictionaryTests\ReadonlyDictionaryTests.csproj", "{48A52ACC-99DE-461B-A299-FFF1B53D28BF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadonlyDictionary.REPL", "ReadonlyDictionary.REPL\ReadonlyDictionary.REPL.csproj", "{6A9065EF-FCA1-4556-82F2-DC2A895CBFCA}"
 EndProject
