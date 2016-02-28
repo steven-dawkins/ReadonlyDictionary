@@ -11,10 +11,13 @@ namespace ReadOnlyDictionary.Storage
 {
     internal struct Header
     {
+        public Guid magic; // magic guids, why not?
         public long Count;
         public long IndexPosition;
         public long DataPosition;
         public int IndexLength;
+
+        public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
     }
 
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
@@ -50,8 +53,27 @@ namespace ReadOnlyDictionary.Storage
 
             this.accessor = mmf.CreateViewAccessor();
 
+            try
+            {
+                WriteData(values, serializer, count);
+            }
+            catch(Exception e)
+            {
+                // if something unexpectedly breaks during population (easy to happen externally as we are fed an IEnumerable)
+                // then ensure no partially populated files are left around
+                this.Dispose();
+                this.accessor = null;
+                this.mmf = null;
+                File.Delete(fi.FullName);
+
+                throw e;
+            }
+        }
+
+        private void WriteData(IEnumerable<KeyValuePair<TKey, TValue>> values, ISerializer<TValue> serializer, long count)
+        {
             var header = new Header();
-            
+
             // allocate space for index
             long position = Marshal.SizeOf(typeof(Header));
             header.DataPosition = position;
@@ -74,6 +96,7 @@ namespace ReadOnlyDictionary.Storage
 
             // store header in file
             header.Count = count;
+            header.magic = Header.expectedMagic;
             accessor.Write(0, ref header);
 
             this.accessor.Flush();
@@ -101,9 +124,17 @@ namespace ReadOnlyDictionary.Storage
             this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
             this.accessor = mmf.CreateViewAccessor();            
 
-            // file begins with count
+            // file begins with header
             Header header;
             accessor.Read<Header>(0, out header);
+
+            if (header.magic != Header.expectedMagic)
+            {
+                this.Dispose();
+                this.accessor = null;
+                this.mmf = null;
+                throw new Exception("unexpected magic number in FileIndexKeyValueStorage file: " + filename);
+            }
 
             char[] indexJsonCharacters = new char[header.IndexLength];
             accessor.ReadArray(header.IndexPosition, indexJsonCharacters, 0, header.IndexLength);
@@ -141,9 +172,15 @@ namespace ReadOnlyDictionary.Storage
 
         public void Dispose()
         {
-            this.accessor.Flush();
-            this.accessor.Dispose();
-            this.mmf.Dispose();
+            if (this.accessor != null)
+            {
+                this.accessor.Flush();
+                this.accessor.Dispose();
+            }
+            if (this.mmf != null)
+            {
+                this.mmf.Dispose();
+            }
         }
     }
 }

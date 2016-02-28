@@ -6,6 +6,7 @@ using System.Linq;
 using ReadOnlyDictionaryTests.SampleData;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
+using System.IO;
 
 
 namespace ReadOnlyDictionaryTests
@@ -109,6 +110,35 @@ namespace ReadOnlyDictionaryTests
             }
 
             storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
+        }
+
+        private class TestException: Exception
+        {
+
+        }
+
+        private IEnumerable<KeyValuePair<Guid, Book>> ExceptionalData()
+        {
+            yield return this.randomData[0];
+            throw new TestException();
+        }
+
+        [TestMethod]
+        public void TestInterruptedPopulate()
+        {
+            var serializer = new NetSerializer<Book>();
+
+            try
+            {
+                using (var temp = new FileIndexKeyValueStorage<Guid, Book>(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
+                {
+
+                }
+            }
+            catch (TestException)
+            {
+                Assert.IsFalse(File.Exists("temp_exceptional.raw"));
+            }
         }
     }
 }
