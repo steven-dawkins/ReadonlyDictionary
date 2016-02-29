@@ -70,6 +70,11 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
+        public static FileIndexKeyValueStorage<TKey, TValue> Open(string filename, ISerializer<TValue> serializer)
+        {
+            return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer);
+        }
+
         public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
             string filename,
@@ -216,13 +221,14 @@ namespace ReadOnlyDictionary.Storage
 
             header.IndexPosition = position;
             var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
-            header.IndexLength = indexJson.Length;
+            var indexBytes = Encoding.UTF8.GetBytes(indexJson);
+            header.IndexLength = indexBytes.Length;
 
             if (header.IndexPosition + header.IndexLength > accessor.Capacity)
             {
                 ResizeMemoryMappedFile(accessor.Capacity + header.IndexLength, filename);
             }
-            accessor.WriteArray(position, Encoding.UTF8.GetBytes(indexJson), 0, indexJson.Length);
+            accessor.WriteArray(position, indexBytes, 0, indexBytes.Length);
 
             // store header in file
             header.Count = count;

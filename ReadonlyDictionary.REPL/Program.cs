@@ -1,4 +1,5 @@
-﻿using ReadOnlyDictionary;
+﻿using Newtonsoft.Json.Linq;
+using ReadOnlyDictionary;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
 using ReadOnlyDictionaryTests;
@@ -118,17 +119,30 @@ namespace ReadonlyDictionary.REPL
         }
     }
 
+    public class Loader : Replify.IReplCommand
+    {
+        public StorageWrapper<string, JObject> File(string filename)
+        {
+            var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, new JsonSerializer<JObject>());
+
+            return new StorageWrapper<string, JObject>(store);
+        }
+    }
+
+    public class StorageWrapper<TKey, T>
+    {
+        private readonly IKeyValueStore<TKey, T> store;
+
+        public StorageWrapper(IKeyValueStore<TKey, T> store)
+        {
+            this.store = store;
+        }
+    }
+
     class Program
     {
-        public class StorageWrapper<TKey, T>
-        {
-            private readonly IKeyValueStore<TKey, T> store;
-
-            public StorageWrapper(IKeyValueStore<TKey, T> store)
-            {
-                this.store = store;
-            }
-        }
+        //Load.File("C:\Temp\MandolineCache\IND_DB\aug136fdbin_mandoline.db.fcst.rawdic");
+        
 
         static void Main(string[] args)
         {
@@ -140,6 +154,7 @@ namespace ReadonlyDictionary.REPL
             repl.AddHostObject("inmemory", storage);
             repl.AddHostObject("Mode", typeof(Tester.Mode));
             repl.AddHostObject("test", new Tester());
+            repl.AddHostObject("Load", new Loader());
 
             repl.StartReplLoop(args);
         }
