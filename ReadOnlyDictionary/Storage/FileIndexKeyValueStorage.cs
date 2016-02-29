@@ -9,19 +9,19 @@ using System.Runtime.InteropServices;
 
 namespace ReadOnlyDictionary.Storage
 {
+    internal struct Header
+    {
+        public Guid magic; // magic guids, why not?
+        public long Count;
+        public long IndexPosition;
+        public long DataPosition;
+        public int IndexLength;
+
+        public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
+    }
+
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
-        private struct Header
-        {
-            public Guid magic; // magic guids, why not?
-            public long Count;
-            public long IndexPosition;
-            public long DataPosition;
-            public int IndexLength;
-
-            public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
-        }
-
         private class NoMagicException : Exception
         {
             public NoMagicException(string filename)
