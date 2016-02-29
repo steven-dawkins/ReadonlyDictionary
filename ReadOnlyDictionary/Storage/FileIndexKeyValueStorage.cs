@@ -9,23 +9,63 @@ using System.Runtime.InteropServices;
 
 namespace ReadOnlyDictionary.Storage
 {
-    internal struct Header
-    {
-        public Guid magic; // magic guids, why not?
-        public long Count;
-        public long IndexPosition;
-        public long DataPosition;
-        public int IndexLength;
-
-        public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
-    }
-
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
+        private struct Header
+        {
+            public Guid magic; // magic guids, why not?
+            public long Count;
+            public long IndexPosition;
+            public long DataPosition;
+            public int IndexLength;
+
+            public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
+        }
+
         private readonly Dictionary<TKey, long> index;
         private readonly MemoryMappedFile mmf;
         private readonly MemoryMappedViewAccessor accessor;
         private readonly ISerializer<TValue> serializer;
+
+        public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
+            IEnumerable<KeyValuePair<TKey, TValue>> values,
+            string filename,
+            long initialSize,
+            ISerializer<TValue> serializer,
+            long count)
+        {
+            if (File.Exists(filename))
+            {
+                try
+                {
+                    return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer);
+                }
+                catch(NoMagicException)
+                {
+                    // no magic almost certainly means the file was partially written as the header is written last
+                    return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
+                }
+            }
+            else
+            {
+                return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
+            }
+        }
+
+        private class NoMagicException : Exception
+        {
+            public NoMagicException(string filename)
+                : base("zeroed magic number in FileIndexKeyValueStorage file: " + filename)
+            {
+            }
+        }
+
+        private class InvalidMagicException : Exception
+        {
+            public InvalidMagicException(string filename): base("unexpected magic number in FileIndexKeyValueStorage file: " + filename)
+            {
+            }
+        }
 
         public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -57,7 +97,7 @@ namespace ReadOnlyDictionary.Storage
             {
                 WriteData(values, serializer, count);
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 // if something unexpectedly breaks during population (easy to happen externally as we are fed an IEnumerable)
                 // then ensure no partially populated files are left around
@@ -66,7 +106,7 @@ namespace ReadOnlyDictionary.Storage
                 this.mmf = null;
                 File.Delete(fi.FullName);
 
-                throw e;
+                throw;
             }
         }
 
@@ -90,7 +130,7 @@ namespace ReadOnlyDictionary.Storage
             }
 
             header.IndexPosition = position;
-            var indexJson = JsonConvert.SerializeObject(this.index);
+            var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
             header.IndexLength = indexJson.Length;
             accessor.WriteArray(position, indexJson.ToCharArray(), 0, indexJson.Length);
 
@@ -119,27 +159,38 @@ namespace ReadOnlyDictionary.Storage
 
         public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer)
         {
-            this.serializer = serializer;
-            var fi = new FileInfo(filename);
-            this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
-            this.accessor = mmf.CreateViewAccessor();            
+            try
+            {
+                this.serializer = serializer;
+                var fi = new FileInfo(filename);
+                this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
+                this.accessor = mmf.CreateViewAccessor();
 
-            // file begins with header
-            Header header;
-            accessor.Read<Header>(0, out header);
+                // file begins with header
+                Header header;
+                accessor.Read<Header>(0, out header);
 
-            if (header.magic != Header.expectedMagic)
+                if (header.magic == Guid.Empty)
+                {
+                    throw new NoMagicException(filename);
+                }
+                if (header.magic != Header.expectedMagic)
+                {
+                    throw new InvalidMagicException(filename);
+                }
+
+                char[] indexJsonCharacters = new char[header.IndexLength];
+                accessor.ReadArray(header.IndexPosition, indexJsonCharacters, 0, header.IndexLength);
+                var indexJson = new string(indexJsonCharacters);
+                this.index = JsonConvert.DeserializeObject<Dictionary<TKey, long>>(indexJson);
+            }
+            catch(Exception)
             {
                 this.Dispose();
                 this.accessor = null;
                 this.mmf = null;
-                throw new Exception("unexpected magic number in FileIndexKeyValueStorage file: " + filename);
+                throw;
             }
-
-            char[] indexJsonCharacters = new char[header.IndexLength];
-            accessor.ReadArray(header.IndexPosition, indexJsonCharacters, 0, header.IndexLength);
-            var indexJson = new string(indexJsonCharacters);
-            this.index = JsonConvert.DeserializeObject<Dictionary<TKey, long>>(indexJson);
         }
 
         public bool ContainsKey(TKey key)
