@@ -65,51 +65,50 @@ namespace ReadOnlyDictionaryTests
         }
     }
 
+    public abstract class FileIndexKeyValueStorageBase : TestBase
+    {
+        protected void WriteStorage(ISerializer<Book> serializer)
+        {
+            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength))
+            {
+
+            }
+
+            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
+        }
+
+    }
+
     [TestClass]
-    public class FileIndexKeyValueStorageJson : TestBase
+    public class FileIndexKeyValueStorageJson : FileIndexKeyValueStorageBase
     {
         public override void StorageInitalize()
         {
             var serializer = new JsonSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
-            {
-
-            }
-
-            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
+            WriteStorage(serializer);
         }
     }
 
     [TestClass]
-    public class FileIndexKeyValueStorageProtobuf : TestBase
+    public class FileIndexKeyValueStorageProtobuf : FileIndexKeyValueStorageBase
     {
         public override void StorageInitalize()
         {
             var serializer = new ProtobufSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
-            {
-
-            }
-
-            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
+            WriteStorage(serializer);
         }
     }
 
     [TestClass]
-    public class FileIndexKeyValueStorageNetSerializer : TestBase
+    public class FileIndexKeyValueStorageNetSerializer : FileIndexKeyValueStorageBase
     {
         public override void StorageInitalize()
         {
             var serializer = new NetSerializer<Book>();
 
-            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 100 * 1024 * 1024, serializer, randomData.LongLength))
-            {
-
-            }
-
-            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
+            WriteStorage(serializer);
         }
 
         private class TestException: Exception
@@ -121,6 +120,19 @@ namespace ReadOnlyDictionaryTests
         {
             yield return this.randomData[0];
             throw new TestException();
+        }
+
+        [TestMethod]
+        public void TestExpandingPopulate()
+        {
+            var serializer = new NetSerializer<Book>();
+
+            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
+            {
+
+            }
+
+            Assert.IsTrue(new FileInfo("temp_expanding.raw").Length > 1 * 1024);
         }
 
         [TestMethod]

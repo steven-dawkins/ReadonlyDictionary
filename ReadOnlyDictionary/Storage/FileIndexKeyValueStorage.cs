@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ReadOnlyDictionary.Storage
 {
@@ -39,9 +40,10 @@ namespace ReadOnlyDictionary.Storage
         }
 
         private readonly Dictionary<TKey, long> index;
-        private readonly MemoryMappedFile mmf;
-        private readonly MemoryMappedViewAccessor accessor;
         private readonly ISerializer<TValue> serializer;
+
+        private MemoryMappedFile mmf;
+        private MemoryMappedViewAccessor accessor;
 
         public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -76,7 +78,6 @@ namespace ReadOnlyDictionary.Storage
             long count)
         {
             this.serializer = serializer;
-
             this.index = new Dictionary<TKey, long>();
 
             var fi = new FileInfo(filename);
@@ -96,7 +97,7 @@ namespace ReadOnlyDictionary.Storage
 
             try
             {
-                WriteData(values, serializer, count);
+                WriteData(values, serializer, count, fi);
             }
             catch(Exception)
             {
@@ -133,9 +134,9 @@ namespace ReadOnlyDictionary.Storage
                     throw new InvalidMagicException(filename);
                 }
 
-                char[] indexJsonCharacters = new char[header.IndexLength];
-                accessor.ReadArray(header.IndexPosition, indexJsonCharacters, 0, header.IndexLength);
-                var indexJson = new string(indexJsonCharacters);
+                byte[] indexJsonBytes = new byte[header.IndexLength];
+                accessor.ReadArray(header.IndexPosition, indexJsonBytes, 0, header.IndexLength);
+                var indexJson = Encoding.UTF8.GetString(indexJsonBytes);
                 this.index = JsonConvert.DeserializeObject<Dictionary<TKey, long>>(indexJson);
             }
             catch(Exception)
@@ -188,7 +189,7 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        private void WriteData(IEnumerable<KeyValuePair<TKey, TValue>> values, ISerializer<TValue> serializer, long count)
+        private void WriteData(IEnumerable<KeyValuePair<TKey, TValue>> values, ISerializer<TValue> serializer, long count, FileInfo filename)
         {
             var header = new Header();
 
@@ -200,6 +201,12 @@ namespace ReadOnlyDictionary.Storage
             {
                 var value = item.Value;
                 var serialized = serializer.Serialize(value);
+
+                if (position + serialized.Length + sizeof(Int32) > accessor.Capacity)
+                {
+                    ResizeMemoryMappedFile(accessor.Capacity * 2, filename);
+                }
+
                 accessor.Write(position, serialized.Length);
                 accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
 
@@ -210,7 +217,12 @@ namespace ReadOnlyDictionary.Storage
             header.IndexPosition = position;
             var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
             header.IndexLength = indexJson.Length;
-            accessor.WriteArray(position, indexJson.ToCharArray(), 0, indexJson.Length);
+
+            if (header.IndexPosition + header.IndexLength > accessor.Capacity)
+            {
+                ResizeMemoryMappedFile(accessor.Capacity + header.IndexLength, filename);
+            }
+            accessor.WriteArray(position, Encoding.UTF8.GetBytes(indexJson), 0, indexJson.Length);
 
             // store header in file
             header.Count = count;
@@ -218,6 +230,46 @@ namespace ReadOnlyDictionary.Storage
             accessor.Write(0, ref header);
 
             this.accessor.Flush();
+        }
+
+        private void ResizeMemoryMappedFile(long newSize, FileInfo fileInfo)
+        {
+            var fi = new FileInfo(fileInfo.FullName + "_" + newSize);
+
+            if (fi.Exists)
+            {
+                fi.Delete();
+            }
+
+            using (var newMMF = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, newSize))
+            using (var newAccessor = newMMF.CreateViewAccessor())
+            {
+                try
+                {
+                    if (accessor.Capacity % 4 != 0)
+                    {
+                        throw new Exception("capacity needs to be divisable by 4 in order to resize");
+                    }
+                    
+                    // todo: write in blocks
+                    for (long i = 0; i < accessor.Capacity; i++)
+                    {
+                        newAccessor.Write(i, accessor.ReadByte(i));
+                    }
+                }
+                catch (Exception)
+                {
+                    fi.Delete();
+                    throw;
+                }
+            }
+
+            Dispose();
+
+            fileInfo.Delete();
+            File.Move(fi.FullName, fileInfo.FullName);
+            this.mmf = MemoryMappedFile.CreateFromFile(fileInfo.FullName, FileMode.Open);
+            this.accessor = this.mmf.CreateViewAccessor();
         }
 
         private static FileInfo PrepareFileForWriting(string filename)
