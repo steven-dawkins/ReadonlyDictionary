@@ -22,6 +22,22 @@ namespace ReadOnlyDictionary.Storage
             public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
         }
 
+        private class NoMagicException : Exception
+        {
+            public NoMagicException(string filename)
+                : base("zeroed magic number in FileIndexKeyValueStorage file: " + filename)
+            {
+            }
+        }
+
+        private class InvalidMagicException : Exception
+        {
+            public InvalidMagicException(string filename)
+                : base("unexpected magic number in FileIndexKeyValueStorage file: " + filename)
+            {
+            }
+        }
+
         private readonly Dictionary<TKey, long> index;
         private readonly MemoryMappedFile mmf;
         private readonly MemoryMappedViewAccessor accessor;
@@ -49,21 +65,6 @@ namespace ReadOnlyDictionary.Storage
             else
             {
                 return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
-            }
-        }
-
-        private class NoMagicException : Exception
-        {
-            public NoMagicException(string filename)
-                : base("zeroed magic number in FileIndexKeyValueStorage file: " + filename)
-            {
-            }
-        }
-
-        private class InvalidMagicException : Exception
-        {
-            public InvalidMagicException(string filename): base("unexpected magic number in FileIndexKeyValueStorage file: " + filename)
-            {
             }
         }
 
@@ -108,53 +109,6 @@ namespace ReadOnlyDictionary.Storage
 
                 throw;
             }
-        }
-
-        private void WriteData(IEnumerable<KeyValuePair<TKey, TValue>> values, ISerializer<TValue> serializer, long count)
-        {
-            var header = new Header();
-
-            // allocate space for index
-            long position = Marshal.SizeOf(typeof(Header));
-            header.DataPosition = position;
-
-            foreach (var item in values)
-            {
-                var value = item.Value;
-                var serialized = serializer.Serialize(value);
-                accessor.Write(position, serialized.Length);
-                accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
-
-                index.Add(item.Key, position);
-                position += serialized.Length + sizeof(Int32);
-            }
-
-            header.IndexPosition = position;
-            var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
-            header.IndexLength = indexJson.Length;
-            accessor.WriteArray(position, indexJson.ToCharArray(), 0, indexJson.Length);
-
-            // store header in file
-            header.Count = count;
-            header.magic = Header.expectedMagic;
-            accessor.Write(0, ref header);
-
-            this.accessor.Flush();
-        }
-
-        private static FileInfo PrepareFileForWriting(string filename)
-        {
-            var fi = new FileInfo(filename);
-            if (fi.Exists)
-            {
-                fi.Delete();
-            }
-
-            if (!fi.Directory.Exists)
-            {
-                fi.Directory.Create();
-            }
-            return fi;
         }
 
         private FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer)
@@ -232,6 +186,53 @@ namespace ReadOnlyDictionary.Storage
             {
                 this.mmf.Dispose();
             }
+        }
+
+        private void WriteData(IEnumerable<KeyValuePair<TKey, TValue>> values, ISerializer<TValue> serializer, long count)
+        {
+            var header = new Header();
+
+            // allocate space for index
+            long position = Marshal.SizeOf(typeof(Header));
+            header.DataPosition = position;
+
+            foreach (var item in values)
+            {
+                var value = item.Value;
+                var serialized = serializer.Serialize(value);
+                accessor.Write(position, serialized.Length);
+                accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
+
+                index.Add(item.Key, position);
+                position += serialized.Length + sizeof(Int32);
+            }
+
+            header.IndexPosition = position;
+            var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
+            header.IndexLength = indexJson.Length;
+            accessor.WriteArray(position, indexJson.ToCharArray(), 0, indexJson.Length);
+
+            // store header in file
+            header.Count = count;
+            header.magic = Header.expectedMagic;
+            accessor.Write(0, ref header);
+
+            this.accessor.Flush();
+        }
+
+        private static FileInfo PrepareFileForWriting(string filename)
+        {
+            var fi = new FileInfo(filename);
+            if (fi.Exists)
+            {
+                fi.Delete();
+            }
+
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+            return fi;
         }
     }
 }
