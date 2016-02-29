@@ -219,15 +219,14 @@ namespace ReadOnlyDictionary.Storage
                 position += serialized.Length + sizeof(Int32);
             }
 
-            header.IndexPosition = position;
             var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
             var indexBytes = Encoding.UTF8.GetBytes(indexJson);
+            header.IndexPosition = position;
             header.IndexLength = indexBytes.Length;
 
-            if (header.IndexPosition + header.IndexLength > accessor.Capacity)
-            {
-                ResizeMemoryMappedFile(accessor.Capacity + header.IndexLength, filename);
-            }
+            // Resize down to minimum size
+            ResizeMemoryMappedFile(header.IndexPosition + header.IndexLength, filename);
+
             accessor.WriteArray(position, indexBytes, 0, indexBytes.Length);
 
             // store header in file
