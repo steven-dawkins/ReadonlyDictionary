@@ -68,7 +68,7 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        private FileIndexKeyValueStorage(
+        public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
             string filename,
             long initialSize,
@@ -111,7 +111,7 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        private FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer)
+        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer)
         {
             try
             {
