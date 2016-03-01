@@ -246,27 +246,35 @@ namespace ReadOnlyDictionary.Storage
                 fi.Delete();
             }
 
-            using (var newMMF = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, newSize))
-            using (var newAccessor = newMMF.CreateViewAccessor())
+            try
             {
-                try
+                using (var newMMF = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, newSize))
+                using (var newAccessor = newMMF.CreateViewAccessor())
                 {
                     if (accessor.Capacity % 4 != 0)
                     {
                         throw new Exception("capacity needs to be divisable by 4 in order to resize");
                     }
-                    
+
                     // todo: write in blocks
                     for (long i = 0; i < accessor.Capacity; i++)
                     {
                         newAccessor.Write(i, accessor.ReadByte(i));
                     }
                 }
-                catch (Exception)
+            }
+            catch (Exception)
+            {
+                try
                 {
+                    // cleanup temporary file
                     fi.Delete();
-                    throw;
                 }
+                catch(Exception deleteException)
+                {
+                    // todo: log deleteException
+                }
+                throw;
             }
 
             Dispose();
