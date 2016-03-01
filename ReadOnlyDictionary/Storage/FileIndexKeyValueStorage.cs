@@ -227,7 +227,7 @@ namespace ReadOnlyDictionary.Storage
             // Resize down to minimum size
             ResizeMemoryMappedFile(header.IndexPosition + header.IndexLength, filename);
 
-            accessor.WriteArray(position, indexBytes, 0, indexBytes.Length);
+            accessor.WriteArray(header.IndexPosition, indexBytes, 0, header.IndexLength);
 
             // store header in file
             header.Count = count;
@@ -257,7 +257,7 @@ namespace ReadOnlyDictionary.Storage
                     }
 
                     // todo: write in blocks
-                    for (long i = 0; i < accessor.Capacity; i++)
+                    for (long i = 0; i < Math.Min(accessor.Capacity, newSize); i++)
                     {
                         newAccessor.Write(i, accessor.ReadByte(i));
                     }
