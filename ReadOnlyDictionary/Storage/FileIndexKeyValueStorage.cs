@@ -249,11 +249,11 @@ namespace ReadOnlyDictionary.Storage
             try
             {
                 using (var newMMF = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, newSize))
-                using (var newAccessor = newMMF.CreateViewAccessor())
+                using (var newAccessor = newMMF.CreateViewAccessor(0, newSize))
                 {
-                    if (accessor.Capacity % 4 != 0)
+                    if (newAccessor.Capacity != newSize)
                     {
-                        throw new Exception("capacity needs to be divisable by 4 in order to resize");
+                        throw new Exception("expected capacity: " + newSize + " actual: " + newAccessor.Capacity);
                     }
 
                     // todo: write in blocks
