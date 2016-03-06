@@ -70,6 +70,16 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
+        public static FileIndexKeyValueStorage<TKey, TValue> Create(
+            IEnumerable<KeyValuePair<TKey, TValue>> values,
+            string filename,
+            long initialSize,
+            ISerializer<TValue> serializer,
+            long count)
+        {
+            return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
+        }
+
         public static FileIndexKeyValueStorage<TKey, TValue> Open(string filename, ISerializer<TValue> serializer)
         {
             return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer);
@@ -179,6 +189,11 @@ namespace ReadOnlyDictionary.Storage
         public uint Count
         {
             get { return (uint)this.index.LongCount(); }
+        }
+
+        public IEnumerable<TKey> GetKeys()
+        {
+            return this.index.Keys;
         }
 
         public void Dispose()

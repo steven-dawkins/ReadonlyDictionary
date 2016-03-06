@@ -30,6 +30,11 @@ namespace ReadOnlyDictionary.Storage
             get { return (uint)this.index.LongCount(); }
         }
 
+        public IEnumerable<TKey> GetKeys()
+        {
+            return this.index.Keys;
+        }
+
         public void Dispose()
         {
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ReadOnlyDictionary.Storage
 {
@@ -7,6 +8,7 @@ namespace ReadOnlyDictionary.Storage
         bool ContainsKey(TKey key);
         bool TryGetValue(TKey key, out TValue value);
         uint Count { get; }
+        IEnumerable<TKey> GetKeys();
     }
 
     public static class IKeyValueStoreExtensions
