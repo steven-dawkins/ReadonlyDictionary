@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using ReadonlyDictionary.Index;
 using ReadOnlyDictionary.Storage;
 using System;
 using System.Collections.Generic;
@@ -8,29 +9,29 @@ using System.Threading.Tasks;
 
 namespace ReadonlyDictionary.Storage.MemoryMappedFileIndex
 {
-    public class DictionaryMemoryMappedFileIndexFactory<T> : IMemoryMappedFileIndexFactory<T>
+    public class DictionaryIndexFactory<T> : IIndexFactory<T>
     {
-        public IMemoryMappedFileIndex<T> Deserialize(byte[] bytes)
+        public IIndex<T> Deserialize(byte[] bytes)
         {
-            return new DictionaryMemoryMappedFileIndex<T>(bytes);
+            return new DictionaryIndex<T>(bytes);
         }
 
         public byte[] Serialize(IEnumerable<KeyValuePair<T, long>> values)
         {
-            return new DictionaryMemoryMappedFileIndex<T>(values).Serialize();
+            return new DictionaryIndex<T>(values).Serialize();
         }
     }
 
-    public class DictionaryMemoryMappedFileIndex<T> : IMemoryMappedFileIndex<T>
+    public class DictionaryIndex<T> : IIndex<T>
     {
         private Dictionary<T, long> dictionary;
 
-        public DictionaryMemoryMappedFileIndex(IEnumerable<KeyValuePair<T, long>> values)
+        public DictionaryIndex(IEnumerable<KeyValuePair<T, long>> values)
         {
             this.dictionary = values.ToDictionary(v => v.Key, v => v.Value);
         }
 
-        public DictionaryMemoryMappedFileIndex(byte[] bytes)
+        public DictionaryIndex(byte[] bytes)
         {
             var indexJson = Encoding.UTF8.GetString(bytes);
             this.dictionary = JsonConvert.DeserializeObject<Dictionary<T, long>>(indexJson);

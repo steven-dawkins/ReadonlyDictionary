@@ -54,6 +54,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exceptions\MagicExceptions.cs" />
+    <Compile Include="Format\Header.cs" />
+    <Compile Include="Index\IIndex.cs" />
     <Compile Include="Storage\FileIndexKeyValueStorage.cs" />
     <Compile Include="Storage\IKeyValueStore.cs" />
     <Compile Include="Storage\InMemoryKeyValueStorage.cs" />
@@ -75,7 +78,7 @@
     <Compile Include="Serialization\NetSerializer.cs" />
     <Compile Include="Serialization\MarshalSerializer.cs" />
     <Compile Include="Serialization\ProtobufSerializer.cs" />
-    <Compile Include="Storage\MemoryMappedFileIndex\DictionaryMemoryMappedFileIndex.cs" />
+    <Compile Include="Storage\MemoryMappedFileIndex\DictionaryIndex.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

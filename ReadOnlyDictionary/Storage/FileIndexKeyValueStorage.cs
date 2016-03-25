@@ -1,4 +1,7 @@
-﻿using ReadonlyDictionary.Storage.MemoryMappedFileIndex;
+﻿using ReadonlyDictionary.Exceptions;
+using ReadonlyDictionary.Format;
+using ReadonlyDictionary.Index;
+using ReadonlyDictionary.Storage.MemoryMappedFileIndex;
 using ReadOnlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
@@ -8,61 +11,14 @@ using System.Runtime.InteropServices;
 
 namespace ReadOnlyDictionary.Storage
 {
-    internal struct Header
-    {
-        public Guid magic; // magic guids, why not?
-        public long Count;
-        public long IndexPosition;
-        public long DataPosition;
-        public int IndexLength;
-
-        public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
-    }
-
-    public interface IMemoryMappedFileIndexFactory<T>
-    {
-        IMemoryMappedFileIndex<T> Deserialize(byte[] bytes);
-        byte[] Serialize(IEnumerable<KeyValuePair<T, long>> values);
-    }
-
-    public interface IMemoryMappedFileIndex<T>
-    {
-        long Get(T key);
-
-        bool ContainsKey(T key);
-
-        bool TryGetValue(T key, out long index);
-
-        uint Count { get; }
-
-        IEnumerable<T> Keys { get; }
-    }
-
-    
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
-        private class NoMagicException : Exception
-        {
-            public NoMagicException(string filename)
-                : base("zeroed magic number in FileIndexKeyValueStorage file: " + filename)
-            {
-            }
-        }
-
-        private class InvalidMagicException : Exception
-        {
-            public InvalidMagicException(string filename)
-                : base("unexpected magic number in FileIndexKeyValueStorage file: " + filename)
-            {
-            }
-        }
-
         private readonly ISerializer<TValue> serializer;
-        private readonly IMemoryMappedFileIndexFactory<TKey> indexFactory;
+        private readonly IIndexFactory<TKey> indexFactory;
 
         private MemoryMappedFile mmf;
         private MemoryMappedViewAccessor accessor;
-        private readonly IMemoryMappedFileIndex<TKey> index;
+        private readonly IIndex<TKey> index;
 
         public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -70,7 +26,7 @@ namespace ReadOnlyDictionary.Storage
             long initialSize,
             ISerializer<TValue> serializer,
             long count,
-            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
+            IIndexFactory<TKey> indexFactory = null)
         {
             if (File.Exists(filename))
             {
@@ -96,7 +52,7 @@ namespace ReadOnlyDictionary.Storage
             long initialSize,
             ISerializer<TValue> serializer,
             long count,
-            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
+            IIndexFactory<TKey> indexFactory = null)
         {
             return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
         }
@@ -104,7 +60,7 @@ namespace ReadOnlyDictionary.Storage
         public static FileIndexKeyValueStorage<TKey, TValue> Open(
             string filename, 
             ISerializer<TValue> serializer, 
-            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
+            IIndexFactory<TKey> indexFactory = null)
         {
             return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer, indexFactory);
         }
@@ -115,12 +71,13 @@ namespace ReadOnlyDictionary.Storage
             long initialSize,
             ISerializer<TValue> serializer,
             long count,
-            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
+            IIndexFactory<TKey> indexFactory = null)
         {
             this.serializer = serializer;
-            this.indexFactory = indexFactory ?? new DictionaryMemoryMappedFileIndexFactory<TKey>();
+            this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
 
-            PrepareFileForWriting(filename);
+            var fi = new FileInfo(filename);
+            PrepareFileForWriting(fi);
 
             this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, initialSize);
 
@@ -143,12 +100,12 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer, IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
+        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer, IIndexFactory<TKey> indexFactory = null)
         {
             try
             {
                 this.serializer = serializer;
-                this.indexFactory = indexFactory ?? new DictionaryMemoryMappedFileIndexFactory<TKey>();
+                this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
                 var fi = new FileInfo(filename);
                 this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
                 this.accessor = mmf.CreateViewAccessor();
@@ -319,9 +276,8 @@ namespace ReadOnlyDictionary.Storage
             this.accessor = this.mmf.CreateViewAccessor();
         }
 
-        private static FileInfo PrepareFileForWriting(string filename)
+        private static FileInfo PrepareFileForWriting(FileInfo fi)
         {
-            var fi = new FileInfo(filename);
             if (fi.Exists)
             {
                 fi.Delete();
