@@ -1,12 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using ReadonlyDictionary.Storage.MemoryMappedFileIndex;
 using ReadOnlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace ReadOnlyDictionary.Storage
 {
@@ -21,6 +19,26 @@ namespace ReadOnlyDictionary.Storage
         public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
     }
 
+    public interface IMemoryMappedFileIndexFactory<T>
+    {
+        IMemoryMappedFileIndex<T> Deserialize(byte[] bytes);
+        byte[] Serialize(IEnumerable<KeyValuePair<T, long>> values);
+    }
+
+    public interface IMemoryMappedFileIndex<T>
+    {
+        long Get(T key);
+
+        bool ContainsKey(T key);
+
+        bool TryGetValue(T key, out long index);
+
+        uint Count { get; }
+
+        IEnumerable<T> Keys { get; }
+    }
+
+    
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
         private class NoMagicException : Exception
@@ -39,34 +57,36 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        private readonly Dictionary<TKey, long> index;
         private readonly ISerializer<TValue> serializer;
+        private readonly IMemoryMappedFileIndexFactory<TKey> indexFactory;
 
         private MemoryMappedFile mmf;
         private MemoryMappedViewAccessor accessor;
+        private readonly IMemoryMappedFileIndex<TKey> index;
 
         public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
             string filename,
             long initialSize,
             ISerializer<TValue> serializer,
-            long count)
+            long count,
+            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
         {
             if (File.Exists(filename))
             {
                 try
                 {
-                    return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer, indexFactory);
                 }
                 catch(NoMagicException)
                 {
                     // no magic almost certainly means the file was partially written as the header is written last
-                    return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
                 }
             }
             else
             {
-                return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
+                return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
             }
         }
 
@@ -75,14 +95,18 @@ namespace ReadOnlyDictionary.Storage
             string filename,
             long initialSize,
             ISerializer<TValue> serializer,
-            long count)
+            long count,
+            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
         {
-            return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count);
+            return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
         }
 
-        public static FileIndexKeyValueStorage<TKey, TValue> Open(string filename, ISerializer<TValue> serializer)
+        public static FileIndexKeyValueStorage<TKey, TValue> Open(
+            string filename, 
+            ISerializer<TValue> serializer, 
+            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
         {
-            return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer);
+            return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer, indexFactory);
         }
 
         public FileIndexKeyValueStorage(
@@ -90,21 +114,13 @@ namespace ReadOnlyDictionary.Storage
             string filename,
             long initialSize,
             ISerializer<TValue> serializer,
-            long count)
+            long count,
+            IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
         {
             this.serializer = serializer;
-            this.index = new Dictionary<TKey, long>();
+            this.indexFactory = indexFactory ?? new DictionaryMemoryMappedFileIndexFactory<TKey>();
 
-            var fi = new FileInfo(filename);
-            if (fi.Exists)
-            {  
-                fi.Delete();
-            }
-
-            if (!fi.Directory.Exists)
-            {
-                fi.Directory.Create();
-            }
+            PrepareFileForWriting(filename);
 
             this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, initialSize);
 
@@ -127,11 +143,12 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer)
+        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer, IMemoryMappedFileIndexFactory<TKey> indexFactory = null)
         {
             try
             {
                 this.serializer = serializer;
+                this.indexFactory = indexFactory ?? new DictionaryMemoryMappedFileIndexFactory<TKey>();
                 var fi = new FileInfo(filename);
                 this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
                 this.accessor = mmf.CreateViewAccessor();
@@ -151,8 +168,8 @@ namespace ReadOnlyDictionary.Storage
 
                 byte[] indexJsonBytes = new byte[header.IndexLength];
                 accessor.ReadArray(header.IndexPosition, indexJsonBytes, 0, header.IndexLength);
-                var indexJson = Encoding.UTF8.GetString(indexJsonBytes);
-                this.index = JsonConvert.DeserializeObject<Dictionary<TKey, long>>(indexJson);
+
+                this.index = this.indexFactory.Deserialize(indexJsonBytes);
             }
             catch(Exception)
             {
@@ -188,7 +205,7 @@ namespace ReadOnlyDictionary.Storage
 
         public uint Count
         {
-            get { return (uint)this.index.LongCount(); }
+            get { return this.index.Count; }
         }
 
         public IEnumerable<TKey> GetKeys()
@@ -217,6 +234,7 @@ namespace ReadOnlyDictionary.Storage
             long position = Marshal.SizeOf(typeof(Header));
             header.DataPosition = position;
 
+            var indexValues = new List<KeyValuePair<TKey, long>>();
             foreach (var item in values)
             {
                 var value = item.Value;
@@ -230,12 +248,13 @@ namespace ReadOnlyDictionary.Storage
                 accessor.Write(position, serialized.Length);
                 accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
 
-                index.Add(item.Key, position);
+                indexValues.Add(new KeyValuePair<TKey, long>(item.Key, position));
+                
                 position += serialized.Length + sizeof(Int32);
             }
 
-            var indexJson = JsonConvert.SerializeObject(this.index); // todo: use passed in serializer (just for consistency)
-            var indexBytes = Encoding.UTF8.GetBytes(indexJson);
+            var indexBytes = this.indexFactory.Serialize(indexValues);
+            
             header.IndexPosition = position;
             header.IndexLength = indexBytes.Length;
 
@@ -312,6 +331,7 @@ namespace ReadOnlyDictionary.Storage
             {
                 fi.Directory.Create();
             }
+
             return fi;
         }
     }

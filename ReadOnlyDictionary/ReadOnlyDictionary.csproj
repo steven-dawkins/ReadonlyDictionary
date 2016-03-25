@@ -75,6 +75,7 @@
     <Compile Include="Serialization\NetSerializer.cs" />
     <Compile Include="Serialization\MarshalSerializer.cs" />
     <Compile Include="Serialization\ProtobufSerializer.cs" />
+    <Compile Include="Storage\MemoryMappedFileIndex\DictionaryMemoryMappedFileIndex.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
