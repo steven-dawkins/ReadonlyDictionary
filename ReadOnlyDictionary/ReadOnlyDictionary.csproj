@@ -79,6 +79,9 @@
     <Compile Include="Serialization\MarshalSerializer.cs" />
     <Compile Include="Serialization\ProtobufSerializer.cs" />
     <Compile Include="Storage\MemoryMappedFileIndex\DictionaryIndex.cs" />
+    <Compile Include="Storage\Stores\IRandomAccessStore.cs" />
+    <Compile Include="Storage\Stores\MemoryMappedStore.cs" />
+    <Compile Include="Storage\Stores\StreamStore.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

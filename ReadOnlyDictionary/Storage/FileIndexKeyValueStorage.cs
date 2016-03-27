@@ -2,6 +2,7 @@
 using ReadonlyDictionary.Format;
 using ReadonlyDictionary.Index;
 using ReadonlyDictionary.Storage.MemoryMappedFileIndex;
+using ReadonlyDictionary.Storage.Stores;
 using ReadOnlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
@@ -15,10 +16,12 @@ namespace ReadOnlyDictionary.Storage
     {
         private readonly ISerializer<TValue> serializer;
         private readonly IIndexFactory<TKey> indexFactory;
-
-        private MemoryMappedFile mmf;
-        private MemoryMappedViewAccessor accessor;
+        
         private readonly IIndex<TKey> index;
+
+        private IRandomAccessStore reader;
+
+        public enum AccessStrategy { Streams, MemoryMapped }
 
         public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -26,24 +29,63 @@ namespace ReadOnlyDictionary.Storage
             long initialSize,
             ISerializer<TValue> serializer,
             long count,
+            AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexFactory<TKey> indexFactory = null)
         {
-            if (File.Exists(filename))
+            var fi = new FileInfo(filename);
+
+            IRandomAccessStore reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
+
+            if (fi.Exists)
             {
                 try
                 {
-                    return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer, indexFactory);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(fi, serializer, reader, indexFactory);
                 }
                 catch(NoMagicException)
                 {
                     // no magic almost certainly means the file was partially written as the header is written last
-                    return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory);
                 }
             }
             else
             {
-                return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
+                return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory);
             }
+        }
+
+        private static IRandomAccessStore GetCreateReaderForStrategy(long initialSize, AccessStrategy strategy, FileInfo fi)
+        {
+            IRandomAccessStore reader;
+            switch (strategy)
+            {
+                case AccessStrategy.MemoryMapped:
+                    reader = new MemoryMappedStore(fi, initialSize);
+                    break;
+                case AccessStrategy.Streams:
+                    reader = new StreamStore(fi, initialSize);
+                    break;
+                default:
+                    throw new Exception("Unexpected access strategy: " + strategy);
+            }
+            return reader;
+        }
+
+        private static IRandomAccessStore GetReaderForStrategy(AccessStrategy strategy, FileInfo fi)
+        {
+            IRandomAccessStore reader;
+            switch (strategy)
+            {
+                case AccessStrategy.MemoryMapped:
+                    reader = new MemoryMappedStore(fi);
+                    break;
+                case AccessStrategy.Streams:
+                    reader = new StreamStore(fi);
+                    break;
+                default:
+                    throw new Exception("Unexpected access strategy: " + strategy);
+            }
+            return reader;
         }
 
         public static FileIndexKeyValueStorage<TKey, TValue> Create(
@@ -52,36 +94,37 @@ namespace ReadOnlyDictionary.Storage
             long initialSize,
             ISerializer<TValue> serializer,
             long count,
+            AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexFactory<TKey> indexFactory = null)
         {
-            return new FileIndexKeyValueStorage<TKey, TValue>(values, filename, initialSize, serializer, count, indexFactory);
+            var fi = new FileInfo(filename);
+            var reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
+            return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory);
         }
 
         public static FileIndexKeyValueStorage<TKey, TValue> Open(
             string filename, 
             ISerializer<TValue> serializer, 
+            AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexFactory<TKey> indexFactory = null)
         {
-            return new FileIndexKeyValueStorage<TKey, TValue>(filename, serializer, indexFactory);
+            var fi = new FileInfo(filename);
+            var reader = GetReaderForStrategy(strategy, fi);
+            return new FileIndexKeyValueStorage<TKey, TValue>(fi, serializer, reader, indexFactory);
         }
 
         public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
-            string filename,
+            FileInfo fi,
             long initialSize,
             ISerializer<TValue> serializer,
             long count,
+            IRandomAccessStore reader,
             IIndexFactory<TKey> indexFactory = null)
         {
             this.serializer = serializer;
             this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
-
-            var fi = new FileInfo(filename);
-            PrepareFileForWriting(fi);
-
-            this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, initialSize);
-
-            this.accessor = mmf.CreateViewAccessor();
+            this.reader = reader;
 
             try
             {
@@ -92,47 +135,41 @@ namespace ReadOnlyDictionary.Storage
                 // if something unexpectedly breaks during population (easy to happen externally as we are fed an IEnumerable)
                 // then ensure no partially populated files are left around
                 this.Dispose();
-                this.accessor = null;
-                this.mmf = null;
+             
                 File.Delete(fi.FullName);
 
                 throw;
             }
         }
 
-        public FileIndexKeyValueStorage(string filename, ISerializer<TValue> serializer, IIndexFactory<TKey> indexFactory = null)
+        public FileIndexKeyValueStorage(FileInfo fi, ISerializer<TValue> serializer, IRandomAccessStore reader, IIndexFactory<TKey> indexFactory = null)
         {
             try
             {
                 this.serializer = serializer;
                 this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
-                var fi = new FileInfo(filename);
-                this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.Open);
-                this.accessor = mmf.CreateViewAccessor();
+                this.reader = reader;
 
                 // file begins with header
-                Header header;
-                accessor.Read<Header>(0, out header);
+                Header header = reader.Read<Header>(0);
 
                 if (header.magic == Guid.Empty)
                 {
-                    throw new NoMagicException(filename);
+                    throw new NoMagicException(fi.FullName);
                 }
                 if (header.magic != Header.expectedMagic)
                 {
-                    throw new InvalidMagicException(filename);
+                    throw new InvalidMagicException(fi.FullName);
                 }
 
-                byte[] indexJsonBytes = new byte[header.IndexLength];
-                accessor.ReadArray(header.IndexPosition, indexJsonBytes, 0, header.IndexLength);
+                byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
                 this.index = this.indexFactory.Deserialize(indexJsonBytes);
             }
             catch(Exception)
             {
                 this.Dispose();
-                this.accessor = null;
-                this.mmf = null;
+                this.reader.Dispose();
                 throw;
             }
         }
@@ -147,9 +184,8 @@ namespace ReadOnlyDictionary.Storage
             long index;
             if (this.index.TryGetValue(key, out index))
             {
-                var serializedSize = this.accessor.ReadInt32(index);
-                byte[] serialized = new byte[serializedSize];
-                this.accessor.ReadArray(index + sizeof(Int32), serialized, 0, serializedSize);
+                var serializedSize = this.reader.ReadInt32(index);
+                byte[] serialized = this.reader.ReadArray(index + sizeof(Int32), serializedSize);
                 value = serializer.Deserialize(serialized);
                 return true;
             }
@@ -172,14 +208,10 @@ namespace ReadOnlyDictionary.Storage
 
         public void Dispose()
         {
-            if (this.accessor != null)
+            if (this.reader != null)
             {
-                this.accessor.Flush();
-                this.accessor.Dispose();
-            }
-            if (this.mmf != null)
-            {
-                this.mmf.Dispose();
+                this.reader.Dispose();
+                this.reader = null;
             }
         }
 
@@ -197,13 +229,13 @@ namespace ReadOnlyDictionary.Storage
                 var value = item.Value;
                 var serialized = serializer.Serialize(value);
 
-                if (position + serialized.Length + sizeof(Int32) > accessor.Capacity)
+                if (position + serialized.Length + sizeof(Int32) > reader.Capacity)
                 {
-                    ResizeMemoryMappedFile(accessor.Capacity * 2, filename);
+                    this.reader.Resize(reader.Capacity * 2);
                 }
 
-                accessor.Write(position, serialized.Length);
-                accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
+                reader.Write(position, serialized.Length);
+                reader.WriteArray(position + sizeof(Int32), serialized);
 
                 indexValues.Add(new KeyValuePair<TKey, long>(item.Key, position));
                 
@@ -216,79 +248,16 @@ namespace ReadOnlyDictionary.Storage
             header.IndexLength = indexBytes.Length;
 
             // Resize down to minimum size
-            ResizeMemoryMappedFile(header.IndexPosition + header.IndexLength, filename);
+            this.reader.Resize(header.IndexPosition + header.IndexLength);
 
-            accessor.WriteArray(header.IndexPosition, indexBytes, 0, header.IndexLength);
+            reader.WriteArray(header.IndexPosition, indexBytes);
 
             // store header in file
             header.Count = count;
             header.magic = Header.expectedMagic;
-            accessor.Write(0, ref header);
+            reader.Write(0, ref header);
 
-            this.accessor.Flush();
-        }
-
-        private void ResizeMemoryMappedFile(long newSize, FileInfo fileInfo)
-        {
-            var fi = new FileInfo(fileInfo.FullName + "_" + newSize);
-
-            if (fi.Exists)
-            {
-                fi.Delete();
-            }
-
-            try
-            {
-                using (var newMMF = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, fi.Name, newSize))
-                using (var newAccessor = newMMF.CreateViewAccessor(0, newSize))
-                {
-                    if (newAccessor.Capacity != newSize)
-                    {
-                        throw new Exception("expected capacity: " + newSize + " actual: " + newAccessor.Capacity);
-                    }
-
-                    // todo: write in blocks
-                    for (long i = 0; i < Math.Min(accessor.Capacity, newSize); i++)
-                    {
-                        newAccessor.Write(i, accessor.ReadByte(i));
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    // cleanup temporary file
-                    fi.Delete();
-                }
-                catch(Exception deleteException)
-                {
-                    // todo: log deleteException
-                }
-                throw;
-            }
-
-            Dispose();
-
-            fileInfo.Delete();
-            File.Move(fi.FullName, fileInfo.FullName);
-            this.mmf = MemoryMappedFile.CreateFromFile(fileInfo.FullName, FileMode.Open);
-            this.accessor = this.mmf.CreateViewAccessor();
-        }
-
-        private static FileInfo PrepareFileForWriting(FileInfo fi)
-        {
-            if (fi.Exists)
-            {
-                fi.Delete();
-            }
-
-            if (!fi.Directory.Exists)
-            {
-                fi.Directory.Create();
-            }
-
-            return fi;
+            reader.Flush();
         }
     }
 }

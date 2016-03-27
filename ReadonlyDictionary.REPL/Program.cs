@@ -109,12 +109,12 @@ namespace ReadonlyDictionary.REPL
         private static IKeyValueStore<Guid, Book> CreateFileIndexKeyValueStorage(KeyValuePair<Guid, Book>[] randomData, ISerializer<Book> serializer, string filename)
         {
             IKeyValueStore<Guid, Book> store;
-            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, filename, 100 * 1024 * 1024, serializer, randomData.LongLength))
+            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(randomData, filename, 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            store = new FileIndexKeyValueStorage<Guid, Book>(filename, serializer);
+            store = FileIndexKeyValueStorage<Guid, Book>.Open(filename, serializer);
             return store;
         }
     }

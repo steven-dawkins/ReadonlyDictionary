@@ -67,28 +67,30 @@ namespace ReadOnlyDictionaryTests
 
     public abstract class FileIndexKeyValueStorageBase : TestBase
     {
-        protected void WriteStorage(ISerializer<Book> serializer)
+        protected void WriteStorage(
+            ISerializer<Book> serializer, 
+            FileIndexKeyValueStorage<Guid, Book>.AccessStrategy strategy = FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.MemoryMapped)
         {
-            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength))
+            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength, strategy))
             {
 
             }
 
-            storage = new FileIndexKeyValueStorage<Guid, Book>("temp.raw", serializer);
+            storage = FileIndexKeyValueStorage<Guid, Book>.Open("temp.raw", serializer);
         }
 
     }
 
-    [TestClass]
-    public class FileIndexKeyValueStorageJson : FileIndexKeyValueStorageBase
-    {
-        public override void StorageInitalize()
-        {
-            var serializer = new JsonSerializer<Book>();
+    //[TestClass]
+    //public class FileIndexKeyValueStorageJson : FileIndexKeyValueStorageBase
+    //{
+    //    public override void StorageInitalize()
+    //    {
+    //        var serializer = new JsonSerializer<Book>();
 
-            WriteStorage(serializer);
-        }
-    }
+    //        WriteStorage(serializer);
+    //    }
+    //}
 
     [TestClass]
     public class FileIndexKeyValueStorageProtobuf : FileIndexKeyValueStorageBase
@@ -102,55 +104,66 @@ namespace ReadOnlyDictionaryTests
     }
 
     [TestClass]
-    public class FileIndexKeyValueStorageNetSerializer : FileIndexKeyValueStorageBase
+    public class FileIndexKeyValueStorageProtobufStream : FileIndexKeyValueStorageBase
     {
         public override void StorageInitalize()
         {
-            var serializer = new NetSerializer<Book>();
+            var serializer = new ProtobufSerializer<Book>();
 
-            WriteStorage(serializer);
-        }
-
-        private class TestException: Exception
-        {
-
-        }
-
-        private IEnumerable<KeyValuePair<Guid, Book>> ExceptionalData()
-        {
-            yield return this.randomData[0];
-            throw new TestException();
-        }
-
-        [TestMethod]
-        public void TestExpandingPopulate()
-        {
-            var serializer = new NetSerializer<Book>();
-
-            using (var temp = new FileIndexKeyValueStorage<Guid, Book>(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
-            {
-
-            }
-
-            Assert.IsTrue(new FileInfo("temp_expanding.raw").Length > 1 * 1024);
-        }
-
-        [TestMethod]
-        public void TestInterruptedPopulate()
-        {
-            var serializer = new NetSerializer<Book>();
-
-            try
-            {
-                using (var temp = new FileIndexKeyValueStorage<Guid, Book>(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
-                {
-
-                }
-            }
-            catch (TestException)
-            {
-                Assert.IsFalse(File.Exists("temp_exceptional.raw"));
-            }
+            WriteStorage(serializer, FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.Streams);
         }
     }
+
+    //[TestClass]
+    //public class FileIndexKeyValueStorageNetSerializer : FileIndexKeyValueStorageBase
+    //{
+    //    public override void StorageInitalize()
+    //    {
+    //        var serializer = new NetSerializer<Book>();
+
+    //        WriteStorage(serializer);
+    //    }
+
+    //    private class TestException: Exception
+    //    {
+
+    //    }
+
+    //    private IEnumerable<KeyValuePair<Guid, Book>> ExceptionalData()
+    //    {
+    //        yield return this.randomData[0];
+    //        throw new TestException();
+    //    }
+
+    //    [TestMethod]
+    //    public void TestExpandingPopulate()
+    //    {
+    //        var serializer = new NetSerializer<Book>();
+
+    //        using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
+    //        {
+
+    //        }
+
+    //        Assert.IsTrue(new FileInfo("temp_expanding.raw").Length > 1 * 1024);
+    //    }
+
+    //    [TestMethod]
+    //    public void TestInterruptedPopulate()
+    //    {
+    //        var serializer = new NetSerializer<Book>();
+
+    //        try
+    //        {
+    //            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
+    //            {
+
+    //            }
+    //        }
+    //        catch (TestException)
+    //        {
+    //            Assert.IsFalse(File.Exists("temp_exceptional.raw"));
+    //        }
+        //}
+    //}
 }
