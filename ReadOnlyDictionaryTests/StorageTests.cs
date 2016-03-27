@@ -7,6 +7,7 @@ using ReadOnlyDictionaryTests.SampleData;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
 using System.IO;
+using System.Diagnostics;
 
 
 namespace ReadOnlyDictionaryTests
@@ -36,12 +37,17 @@ namespace ReadOnlyDictionaryTests
         {
             Assert.AreEqual((uint)randomData.Length, storage.Count);
 
+            var timer = new Stopwatch();
+            timer.Start();
+
             for (int i = 0; i < randomData.Length; i++)
             {
                 var item = randomData[i];
                 Assert.AreEqual(item.Value, storage.Get(item.Key));
                 Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
             }
+
+            Console.WriteLine(timer.ElapsedMilliseconds + "ms");
         }
     }
 
@@ -81,16 +87,16 @@ namespace ReadOnlyDictionaryTests
 
     }
 
-    //[TestClass]
-    //public class FileIndexKeyValueStorageJson : FileIndexKeyValueStorageBase
-    //{
-    //    public override void StorageInitalize()
-    //    {
-    //        var serializer = new JsonSerializer<Book>();
+    [TestClass]
+    public class FileIndexKeyValueStorageJson : FileIndexKeyValueStorageBase
+    {
+        public override void StorageInitalize()
+        {
+            var serializer = new JsonSerializer<Book>();
 
-    //        WriteStorage(serializer);
-    //    }
-    //}
+            WriteStorage(serializer);
+        }
+    }
 
     [TestClass]
     public class FileIndexKeyValueStorageProtobuf : FileIndexKeyValueStorageBase
@@ -114,56 +120,56 @@ namespace ReadOnlyDictionaryTests
         }
     }
 
-    //[TestClass]
-    //public class FileIndexKeyValueStorageNetSerializer : FileIndexKeyValueStorageBase
-    //{
-    //    public override void StorageInitalize()
-    //    {
-    //        var serializer = new NetSerializer<Book>();
+    [TestClass]
+    public class FileIndexKeyValueStorageNetSerializer : FileIndexKeyValueStorageBase
+    {
+        public override void StorageInitalize()
+        {
+            var serializer = new NetSerializer<Book>();
 
-    //        WriteStorage(serializer);
-    //    }
+            WriteStorage(serializer);
+        }
 
-    //    private class TestException: Exception
-    //    {
+        private class TestException : Exception
+        {
 
-    //    }
+        }
 
-    //    private IEnumerable<KeyValuePair<Guid, Book>> ExceptionalData()
-    //    {
-    //        yield return this.randomData[0];
-    //        throw new TestException();
-    //    }
+        private IEnumerable<KeyValuePair<Guid, Book>> ExceptionalData()
+        {
+            yield return this.randomData[0];
+            throw new TestException();
+        }
 
-    //    [TestMethod]
-    //    public void TestExpandingPopulate()
-    //    {
-    //        var serializer = new NetSerializer<Book>();
+        [TestMethod]
+        public void TestExpandingPopulate()
+        {
+            var serializer = new NetSerializer<Book>();
 
-    //        using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
-    //        {
+            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
+            {
 
-    //        }
+            }
 
-    //        Assert.IsTrue(new FileInfo("temp_expanding.raw").Length > 1 * 1024);
-    //    }
+            Assert.IsTrue(new FileInfo("temp_expanding.raw").Length > 1 * 1024);
+        }
 
-    //    [TestMethod]
-    //    public void TestInterruptedPopulate()
-    //    {
-    //        var serializer = new NetSerializer<Book>();
+        [TestMethod]
+        public void TestInterruptedPopulate()
+        {
+            var serializer = new NetSerializer<Book>();
 
-    //        try
-    //        {
-    //            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
-    //            {
+            try
+            {
+                using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
+                {
 
-    //            }
-    //        }
-    //        catch (TestException)
-    //        {
-    //            Assert.IsFalse(File.Exists("temp_exceptional.raw"));
-    //        }
-        //}
-    //}
+                }
+            }
+            catch (TestException)
+            {
+                Assert.IsFalse(File.Exists("temp_exceptional.raw"));
+            }
+        }
+    }
 }
