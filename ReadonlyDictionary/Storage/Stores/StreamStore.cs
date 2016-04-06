@@ -10,7 +10,7 @@ namespace ReadonlyDictionary.Storage.Stores
 
         public StreamStore(FileInfo fileInfo)
         {
-            this.stream = File.Open(fileInfo.FullName, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+            this.stream = File.Open(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
         public StreamStore(FileInfo fileInfo, long initialSize)
