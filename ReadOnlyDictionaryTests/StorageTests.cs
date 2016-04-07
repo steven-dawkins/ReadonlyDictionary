@@ -112,11 +112,35 @@ namespace ReadOnlyDictionaryTests
     [TestClass]
     public class FileIndexKeyValueStorageProtobufStream : FileIndexKeyValueStorageBase
     {
+        private static ProtobufSerializer<Book> serializer = new ProtobufSerializer<Book>();
+
         public override void StorageInitalize()
         {
-            var serializer = new ProtobufSerializer<Book>();
-
             WriteStorage(serializer, FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.Streams);
+        }
+
+        [TestMethod]
+        public void TestDualRead()
+        {
+            var serializer = new NetSerializer<Book>();
+
+            var data = RandomDataGenerator.RandomData(10000).ToArray();
+
+            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
+            {
+
+            }
+
+            using (var temp1 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer, FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.Streams))
+            using (var temp2 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer, FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams))
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    var item = data[i];
+                    Assert.AreEqual(item.Value, temp1.Get(item.Key));
+                    Assert.AreEqual(item.Value, temp2.Get(item.Key));
+                }
+            }
         }
     }
 
