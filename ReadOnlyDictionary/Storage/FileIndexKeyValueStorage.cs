@@ -1,7 +1,6 @@
 ﻿using ReadonlyDictionary.Exceptions;
 using ReadonlyDictionary.Format;
 using ReadonlyDictionary.Index;
-using ReadonlyDictionary.Storage.MemoryMappedFileIndex;
 using ReadonlyDictionary.Storage.Stores;
 using ReadOnlyDictionary.Serialization;
 using System;

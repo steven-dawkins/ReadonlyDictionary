@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReadonlyDictionary.Storage.MemoryMappedFileIndex
+namespace ReadonlyDictionary.Index
 {
     public class DictionaryIndexFactory<T> : IIndexFactory<T>
     {
@@ -28,6 +28,13 @@ namespace ReadonlyDictionary.Storage.MemoryMappedFileIndex
 
         public DictionaryIndex(IEnumerable<KeyValuePair<T, long>> values)
         {
+            var dupes = values.GroupBy(v => v.Key).Where(g => g.Count() > 1);
+
+            if (dupes.Count() > 1)
+            {
+                throw new Exception("Duplicate keys: " + String.Join(", ", dupes.Select(v => v.Key)));
+            }
+
             this.dictionary = values.ToDictionary(v => v.Key, v => v.Value);
         }
 

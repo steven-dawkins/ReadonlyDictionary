@@ -71,14 +71,14 @@
     <Compile Include="MPH\MillerRabin.cs" />
     <Compile Include="MPH\MinPerfectHash.cs" />
     <Compile Include="MPH\Select.cs" />
-    <Compile Include="ReadOnlyPersistantDictionary.cs" />
+    <Compile Include="MinPerfectHashKeyValueStorage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadOnlyPersistantDictionaryFacade.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="Serialization\NetSerializer.cs" />
     <Compile Include="Serialization\MarshalSerializer.cs" />
     <Compile Include="Serialization\ProtobufSerializer.cs" />
-    <Compile Include="Storage\MemoryMappedFileIndex\DictionaryIndex.cs" />
+    <Compile Include="Index\DictionaryIndex.cs" />
     <Compile Include="Storage\Stores\IRandomAccessStore.cs" />
     <Compile Include="Storage\Stores\MemoryMappedStore.cs" />
     <Compile Include="Storage\Stores\StreamStore.cs" />

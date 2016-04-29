@@ -9,63 +9,7 @@ using System.IO;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
 
-namespace ReadOnlyDictionary
-{
-    public interface IIndexerFactory
-    {
-        IIndexer Build(IEnumerable<Guid> values);
-        IIndexer Load(MemoryMappedViewAccessor view);
-    }
-
-    public interface IIndexer
-    {
-        long GetIndexOf(Guid key);
-        void WriteAt(long offset, MemoryMappedViewAccessor view);
-        long Size();
-    }
-
-    public class DictionaryIndexerFactor : IIndexerFactory
-    {
-        public IIndexer Build(IEnumerable<Guid> values)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IIndexer Load(MemoryMappedViewAccessor view)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class DictionaryIndexer : IIndexer
-    {
-        private readonly Dictionary<Guid, long> index;
-
-        public DictionaryIndexer(IEnumerable<Guid> values)
-        {
-            long count = 0;
-            this.index = values.ToDictionary(v => v, v => count++);
-        }
-
-        public long GetIndexOf(Guid key)
-        {
-            return this.index[key];
-        }
-
-        public void WriteAt(long offset, MemoryMappedViewAccessor view)
-        {
-            throw new NotImplementedException();
-        }
-
-        public long Size()
-        {
-             var guidBytes = Guid.NewGuid().ToByteArray().Length;
-
-             return this.index.Count * (guidBytes + sizeof(long));
-        }
-    }
-
-    
+namespace ReadOnlyDictionary {        
 
     //public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
     //{
