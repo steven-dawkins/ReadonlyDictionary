@@ -6,7 +6,7 @@ install:
   choco install SourceLink
 before_package:
   - dir "C:\projects\readonlydictionary\ReadOnlyDictionary\bin\Release\"
-  - sourcelink index -pr ./ReadOnlyDictionary/ReadOnlyDictionary.csproj -pp Configuration Release -u 'https://raw.githubusercontent.com/steven-dawkins/readonlydictionary/{0}/%var2%'
+  - sourcelink index -pr ./ReadOnlyDictionary/ReadOnlyDictionary.csproj -pp Configuration Release -u https://raw.githubusercontent.com/steven-dawkins/readonlydictionary/{0}/%var2%
   
 build:
   publish_nuget: true
