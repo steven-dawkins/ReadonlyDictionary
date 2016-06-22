@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ReadOnlyDictionary;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
@@ -7,6 +8,7 @@ using ReadOnlyDictionaryTests.SampleData;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -129,6 +131,26 @@ namespace ReadonlyDictionary.REPL
         }
     }
 
+    public class Converter : Replify.IReplCommand
+    {
+        public void ConvertToJson(string filename)
+        {
+            using (var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, new JsonSerializer<JObject>()))
+            {
+
+                var everything = from key in store.GetKeys()
+                                 select new { Key = key, Value = store.Get(key) };
+
+                var everythingJson = JsonConvert.SerializeObject(everything, Formatting.Indented);
+
+                File.WriteAllText(filename + ".keys.json", JsonConvert.SerializeObject(store.GetKeys()));
+                File.WriteAllText(filename + ".json", everythingJson);
+            }
+        }
+    }
+    
+
+
     public class StorageWrapper<TKey, T>
     {
         private readonly IKeyValueStore<TKey, T> store;
@@ -136,6 +158,16 @@ namespace ReadonlyDictionary.REPL
         public StorageWrapper(IKeyValueStore<TKey, T> store)
         {
             this.store = store;
+        }
+
+        public TKey[] GetKeys()
+        {
+            return this.store.GetKeys().ToArray();
+        }
+
+        public T Get(TKey key)
+        {
+            return this.store.Get(key);
         }
     }
 

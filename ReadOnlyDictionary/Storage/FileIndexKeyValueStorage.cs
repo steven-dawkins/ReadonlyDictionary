@@ -246,6 +246,21 @@ namespace ReadOnlyDictionary.Storage
             header.IndexPosition = position;
             header.IndexLength = indexBytes.Length;
 
+            if (serializer is JsonSerializer<TValue>)
+            {
+                header.SerializationStrategy = Header.SerializationStrategyEnum.Json;
+            }
+            else if (serializer is ProtobufSerializer<TValue>)
+            {
+                header.SerializationStrategy = Header.SerializationStrategyEnum.Protobuf;
+            }
+            else
+            {
+                header.SerializationStrategy = Header.SerializationStrategyEnum.Custom;
+            }
+
+            header.Version = Header.CurrentVersion;
+
             // Resize down to minimum size
             this.reader.Resize(header.IndexPosition + header.IndexLength);
 
