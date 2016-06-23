@@ -26,8 +26,8 @@ namespace ReadOnlyDictionary.Storage
             IEnumerable<KeyValuePair<TKey, TValue>> values,
             string filename,
             long initialSize,
-            ISerializer<TValue> serializer,
             long count,
+            ISerializer<TValue> serializer = null,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexFactory<TKey> indexFactory = null)
         {
@@ -39,7 +39,7 @@ namespace ReadOnlyDictionary.Storage
             {
                 try
                 {
-                    return new FileIndexKeyValueStorage<TKey, TValue>(fi, serializer, reader, indexFactory);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexFactory);
                 }
                 catch(NoMagicException)
                 {
@@ -103,13 +103,13 @@ namespace ReadOnlyDictionary.Storage
 
         public static FileIndexKeyValueStorage<TKey, TValue> Open(
             string filename, 
-            ISerializer<TValue> serializer, 
+            ISerializer<TValue> serializer = null, 
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexFactory<TKey> indexFactory = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetReaderForStrategy(strategy, fi);
-            return new FileIndexKeyValueStorage<TKey, TValue>(fi, serializer, reader, indexFactory);
+            return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexFactory);
         }
 
         public FileIndexKeyValueStorage(
@@ -141,7 +141,11 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        public FileIndexKeyValueStorage(FileInfo fi, ISerializer<TValue> serializer, IRandomAccessStore reader, IIndexFactory<TKey> indexFactory = null)
+        public FileIndexKeyValueStorage(
+            FileInfo fi, 
+            IRandomAccessStore reader, 
+            ISerializer<TValue> serializer = null, 
+            IIndexFactory<TKey> indexFactory = null)
         {
             try
             {
@@ -160,6 +164,24 @@ namespace ReadOnlyDictionary.Storage
                 {
                     throw new InvalidMagicException(fi.FullName);
                 }
+
+                switch (header.SerializationStrategy)
+                {
+                    case Header.SerializationStrategyEnum.Json:
+                        serializer = new ProtobufSerializer<TValue>();
+                        break;
+                    case Header.SerializationStrategyEnum.Protobuf:
+                        serializer = new ProtobufSerializer<TValue>();
+                        break;
+                    case Header.SerializationStrategyEnum.Custom:
+                        if (serializer == null)
+                        {
+                            throw new ArgumentException("Readonlydictionary users custom serializer which was not supplied");
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
+                }                
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
