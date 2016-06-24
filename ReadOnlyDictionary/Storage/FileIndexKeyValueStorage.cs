@@ -167,7 +167,7 @@ namespace ReadOnlyDictionary.Storage
                 switch (header.SerializationStrategy)
                 {
                     case Header.SerializationStrategyEnum.Json:
-                        this.serializer = new ProtobufSerializer<TValue>();
+                        this.serializer = new JsonSerializer<TValue>();
                         break;
                     case Header.SerializationStrategyEnum.Protobuf:
                         this.serializer = new ProtobufSerializer<TValue>();
