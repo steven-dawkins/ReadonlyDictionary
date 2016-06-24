@@ -149,7 +149,6 @@ namespace ReadOnlyDictionary.Storage
         {
             try
             {
-                this.serializer = serializer;
                 this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
                 this.reader = reader;
 
@@ -168,15 +167,19 @@ namespace ReadOnlyDictionary.Storage
                 switch (header.SerializationStrategy)
                 {
                     case Header.SerializationStrategyEnum.Json:
-                        serializer = new ProtobufSerializer<TValue>();
+                        this.serializer = new ProtobufSerializer<TValue>();
                         break;
                     case Header.SerializationStrategyEnum.Protobuf:
-                        serializer = new ProtobufSerializer<TValue>();
+                        this.serializer = new ProtobufSerializer<TValue>();
                         break;
                     case Header.SerializationStrategyEnum.Custom:
                         if (serializer == null)
                         {
                             throw new ArgumentException("Readonlydictionary users custom serializer which was not supplied");
+                        }
+                        else
+                        {
+                            this.serializer = serializer;
                         }
                         break;
                     default:
