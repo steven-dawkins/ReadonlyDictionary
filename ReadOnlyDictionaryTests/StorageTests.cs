@@ -8,7 +8,7 @@ using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
 using System.IO;
 using System.Diagnostics;
-
+using Newtonsoft.Json;
 
 namespace ReadOnlyDictionaryTests
 {
@@ -95,6 +95,46 @@ namespace ReadOnlyDictionaryTests
             var serializer = new JsonSerializer<Book>();
 
             WriteStorage(serializer);
+        }
+    }
+
+    [TestClass]
+    public class FileIndexKeyValueStorageJsonFlyweight : FileIndexKeyValueStorageBase
+    {
+        public override void StorageInitalize()
+        {            
+            var serializer = new JsonFlyweightSerializer<Book>();
+
+            WriteStorage(serializer);
+        }
+
+        [TestMethod]
+        public void TestFlyweightSerialization()
+        {
+            var serializer = new JsonFlyweightSerializer<Book>();
+            var strategy = FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams;
+
+            var data = RandomDataGenerator.RandomData(10000).ToArray();
+
+            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
+            {
+
+            }
+
+            var serializerJson = JsonConvert.SerializeObject(serializer.Serialize());
+            var deserializedState = JsonConvert.DeserializeObject<JsonFlyweightSerializer<Book>.JsonFlyweightSerializerState>(serializerJson);
+            var serializer2 = new JsonFlyweightSerializer<Book>(deserializedState);
+
+            using (var temp1 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer2, strategy))
+            using (var temp2 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer2, strategy))
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    var item = data[i];
+                    Assert.AreEqual(item.Value, temp1.Get(item.Key));
+                    Assert.AreEqual(item.Value, temp2.Get(item.Key));
+                }
+            }
         }
     }
 
