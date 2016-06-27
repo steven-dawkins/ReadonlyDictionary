@@ -169,6 +169,11 @@ namespace ReadonlyDictionary.REPL
         {
             return this.store.Get(key);
         }
+
+        public override string ToString()
+        {
+            return store.ToString();
+        }
     }
 
     class Program

@@ -298,5 +298,10 @@ namespace ReadOnlyDictionary.Storage
 
             reader.Flush();
         }
+
+        public override string ToString()
+        {
+            return $"Serializer: {serializer} Count: {index.Count} Reader: {reader}";
+        }
     }
 }
