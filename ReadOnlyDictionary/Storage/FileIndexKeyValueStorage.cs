@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ReadOnlyDictionary.Storage
 {
@@ -102,9 +103,9 @@ namespace ReadOnlyDictionary.Storage
         }
 
         public static FileIndexKeyValueStorage<TKey, TValue> Open(
-            string filename, 
-            ISerializer<TValue> serializer = null, 
+            string filename,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
+            ISerializer<TValue> serializer = null,
             IIndexFactory<TKey> indexFactory = null)
         {
             var fi = new FileInfo(filename);
@@ -172,6 +173,12 @@ namespace ReadOnlyDictionary.Storage
                     case Header.SerializationStrategyEnum.Protobuf:
                         this.serializer = new ProtobufSerializer<TValue>();
                         break;
+                    case Header.SerializationStrategyEnum.JsonFlyWeight:
+                        var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
+                        var stateJson = Encoding.ASCII.GetString(stateBytes);
+                        var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
+                        this.serializer = new JsonFlyweightSerializer<TValue>(state);
+                        break;
                     case Header.SerializationStrategyEnum.Custom:
                         if (serializer == null)
                         {
@@ -179,7 +186,7 @@ namespace ReadOnlyDictionary.Storage
                         }
                         else
                         {
-                            this.serializer = serializer;
+                            this.serializer = serializer;                            
                         }
                         break;
                     default:
@@ -279,6 +286,10 @@ namespace ReadOnlyDictionary.Storage
             {
                 header.SerializationStrategy = Header.SerializationStrategyEnum.Protobuf;
             }
+            else if (serializer is JsonFlyweightSerializer<TValue>)
+            {
+                header.SerializationStrategy = Header.SerializationStrategyEnum.JsonFlyWeight;
+            }
             else
             {
                 header.SerializationStrategy = Header.SerializationStrategyEnum.Custom;
@@ -286,10 +297,16 @@ namespace ReadOnlyDictionary.Storage
 
             header.Version = Header.CurrentVersion;
 
-            // Resize down to minimum size
-            this.reader.Resize(header.IndexPosition + header.IndexLength);
+            var serializerJsonBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(serializer.GetState()));
+            header.SerializerJsonStart = header.IndexPosition + indexBytes.Length;
+            header.SerializerJsonLength = serializerJsonBytes.Length;
 
-            reader.WriteArray(header.IndexPosition, indexBytes);
+            // Resize down to minimum size
+            this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength);
+
+            reader.WriteArray(header.IndexPosition, indexBytes);            
+            reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
+            
 
             // store header in file
             header.Count = count;

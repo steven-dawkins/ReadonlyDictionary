@@ -10,5 +10,7 @@ namespace ReadOnlyDictionary.Serialization
     {
         byte[] Serialize(T value);
         T Deserialize(byte[] bytes);
+
+        Object GetState();
     }
 }

@@ -116,7 +116,7 @@ namespace ReadonlyDictionary.REPL
 
             }
 
-            store = FileIndexKeyValueStorage<Guid, Book>.Open(filename, serializer);
+            store = FileIndexKeyValueStorage<Guid, Book>.Open(filename);
             return store;
         }
     }
@@ -125,7 +125,7 @@ namespace ReadonlyDictionary.REPL
     {
         public StorageWrapper<string, JObject> File(string filename)
         {
-            var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, new JsonSerializer<JObject>());
+            var store = FileIndexKeyValueStorage<string, JObject>.Open(filename);
 
             return new StorageWrapper<string, JObject>(store);
         }
@@ -135,7 +135,7 @@ namespace ReadonlyDictionary.REPL
     {
         public void ConvertToJson(string filename)
         {
-            using (var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, new JsonSerializer<JObject>()))
+            using (var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, serializer: new JsonSerializer<JObject>()))
             {
 
                 var everything = from key in store.GetKeys()

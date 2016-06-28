@@ -9,8 +9,7 @@ using System.Reflection;
 using System.Text;
 
 namespace ReadOnlyDictionary.Serialization
-{
-
+{    
     public class JsonFlyweightSerializer<T> : ISerializer<T>
     {
         private readonly JsonSerializerSettings settings;
@@ -19,6 +18,12 @@ namespace ReadOnlyDictionary.Serialization
 
         public JsonFlyweightSerializer()
             : this(new FlyweightDataContractResolver(), new JsonFlyweightConverter<string>())
+        {
+
+        }
+
+        public JsonFlyweightSerializer(object state)
+            : this((JsonFlyweightSerializerState)state)
         {
 
         }
@@ -54,14 +59,19 @@ namespace ReadOnlyDictionary.Serialization
             {
                 this.Contract = contract;
                 this.Converter = converter;
-            }
+            }            
         }
 
 
         public JsonFlyweightSerializerState Serialize()
         {
             return new JsonFlyweightSerializerState(this.contract.Serialize(), this.converter.Serialize());
-        }        
+        }
+
+        public object GetState()
+        {
+            return this.Serialize();
+        }
 
         public byte[] Serialize(T value)
         {
@@ -73,7 +83,7 @@ namespace ReadOnlyDictionary.Serialization
         {
             var json = Encoding.UTF8.GetString(bytes);
             return JsonConvert.DeserializeObject<T>(json, this.settings);
-        }
+        }       
 
         // borrowed from stackoverflow: http://stackoverflow.com/questions/10966331/two-way-bidirectional-dictionary-in-c/10966684
         public class Map<T1, T2>

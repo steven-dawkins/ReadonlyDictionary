@@ -82,7 +82,7 @@ namespace ReadOnlyDictionaryTests
 
             }
 
-            storage = FileIndexKeyValueStorage<Guid, Book>.Open("temp.raw", serializer);
+            storage = FileIndexKeyValueStorage<Guid, Book>.Open("temp.raw", serializer: serializer);
         }
 
     }
@@ -120,19 +120,13 @@ namespace ReadOnlyDictionaryTests
             {
 
             }
-
-            var serializerJson = JsonConvert.SerializeObject(serializer.Serialize());
-            var deserializedState = JsonConvert.DeserializeObject<JsonFlyweightSerializer<Book>.JsonFlyweightSerializerState>(serializerJson);
-            var serializer2 = new JsonFlyweightSerializer<Book>(deserializedState);
-
-            using (var temp1 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer2, strategy))
-            using (var temp2 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer2, strategy))
+            
+            using (var reader = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", strategy, null))            
             {
                 for (int i = 0; i < data.Length; i++)
                 {
                     var item = data[i];
-                    Assert.AreEqual(item.Value, temp1.Get(item.Key));
-                    Assert.AreEqual(item.Value, temp2.Get(item.Key));
+                    Assert.AreEqual(item.Value, reader.Get(item.Key));                    
                 }
             }
         }
@@ -171,8 +165,8 @@ namespace ReadOnlyDictionaryTests
 
             }
 
-            using (var temp1 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer, FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.Streams))
-            using (var temp2 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", serializer, FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams))
+            using (var temp1 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams, serializer))
+            using (var temp2 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams, serializer))
             {
                 for (int i = 0; i < data.Length; i++)
                 {

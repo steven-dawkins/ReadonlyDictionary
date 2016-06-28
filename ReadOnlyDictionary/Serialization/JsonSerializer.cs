@@ -2,6 +2,7 @@
 using ProtoBuf;
 using System.IO;
 using System.Text;
+using System;
 
 namespace ReadOnlyDictionary.Serialization
 {
@@ -16,6 +17,11 @@ namespace ReadOnlyDictionary.Serialization
         public T Deserialize(byte[] bytes)
         {
             return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(bytes));
+        }
+
+        public object GetState()
+        {
+            return null;
         }
     }
 
