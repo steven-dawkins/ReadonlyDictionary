@@ -6,6 +6,7 @@ using ReadOnlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -244,11 +245,11 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        private void WriteData(
-            IEnumerable<KeyValuePair<TKey, TValue>> values, 
-            ISerializer<TValue> serializer, 
-            IIndexSerializer<TKey> indexSerializer, 
-            long count, 
+        private unsafe void WriteData(
+            IEnumerable<KeyValuePair<TKey, TValue>> values,
+            ISerializer<TValue> serializer,
+            IIndexSerializer<TKey> indexSerializer,
+            long count,
             FileInfo filename)
         {
             var header = new Header();
@@ -272,12 +273,12 @@ namespace ReadOnlyDictionary.Storage
                 reader.WriteArray(position + sizeof(Int32), serialized);
 
                 indexValues.Add(new KeyValuePair<TKey, long>(item.Key, position));
-                
+
                 position += serialized.Length + sizeof(Int32);
             }
 
             var indexBytes = indexSerializer.Serialize(indexValues);
-            
+
             header.IndexPosition = position;
             header.IndexLength = indexBytes.Length;
 
@@ -305,14 +306,50 @@ namespace ReadOnlyDictionary.Storage
             header.SerializerJsonStart = header.IndexPosition + indexBytes.Length;
             header.SerializerJsonLength = serializerJsonBytes.Length;
 
-            // Resize down to minimum size
-            this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength);
-
-            reader.WriteArray(header.IndexPosition, indexBytes);            
+            reader.WriteArray(header.IndexPosition, indexBytes);
             reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
-            
+
+            //var customContent = new { A = "Test", B = "Ipsum" };
+            //var customContentBytes = new[] { Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(customContent)) };
+
+            //var blocks = new CustomDataBlock[]
+            //    {
+            //        new CustomDataBlock()
+            //        {
+            //            //Name = "Testing".ToCharArray(),
+            //            Position = header.IndexPosition + indexBytes.Length + serializerJsonBytes.Length,
+            //            Length = customContentBytes.Length
+            //        }
+            //    };
+
+            //fixed(CustomDataBlock * p = &blocks[0])
+            //{
+            //    var str = "Testing";
+
+            //    for(int i = 0;i < str.Length; i++)
+            //    {
+            //        p->Name[i] = str[i];
+            //    }
+            //}
+
+            //var customBlockPosition = header.IndexPosition + header.IndexLength + header.SerializerJsonLength;
+            //for (int i = 0; i < blocks.Length; i++)
+            //{
+            //    this.reader.Write(customBlockPosition, ref blocks[i]);
+            //    customBlockPosition += sizeof(CustomDataBlock);
+            //}
+
+            //for (int i = 0; i < blocks.Length; i++)
+            //{
+            //    this.reader.WriteArray(customBlockPosition, customContentBytes[i]);
+            //    customBlockPosition += customContentBytes[i].LongLength;
+            //}
+
+            //// Resize down to minimum size
+            //this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + header.customBlockCount * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
 
             // store header in file
+            //header.customBlockCount = blocks.Length;
             header.Count = count;
             header.magic = Header.expectedMagic;
             reader.Write(0, ref header);

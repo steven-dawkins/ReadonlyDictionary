@@ -55,7 +55,7 @@ namespace ReadonlyDictionary.Storage.Stores
             get { return this.stream.Length; }
         }
 
-        public void Write<T>(int position, ref T data) where T : struct
+        public void Write<T>(long position, ref T data) where T : struct
         {
             var bytes = StructureToByteArray(data);
             WriteArray(position, bytes);

@@ -17,6 +17,16 @@ namespace ReadonlyDictionary.Format
         public int Version;
         public SerializationStrategyEnum SerializationStrategy;
         public long SerializerJsonStart;
-        public int SerializerJsonLength;               
+        public int SerializerJsonLength;
+
+        //public int customBlockCount;
     }
+
+    unsafe internal struct CustomDataBlock
+    {
+        public fixed char Name[256];
+        public long Position;
+        public int Length;
+    }
+
 }
