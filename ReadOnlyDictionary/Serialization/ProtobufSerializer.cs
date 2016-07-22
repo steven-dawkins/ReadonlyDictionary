@@ -1,5 +1,6 @@
 ﻿using ProtoBuf;
 using System.IO;
+using System;
 
 namespace ReadOnlyDictionary.Serialization
 {
@@ -21,6 +22,11 @@ namespace ReadOnlyDictionary.Serialization
             {
                 return ProtoBuf.Serializer.Deserialize<T>(ms);
             }
+        }
+
+        public object GetState()
+        {
+            return null;
         }
     }
 }

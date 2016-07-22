@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ReadOnlyDictionary;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
@@ -7,6 +8,7 @@ using ReadOnlyDictionaryTests.SampleData;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -114,7 +116,7 @@ namespace ReadonlyDictionary.REPL
 
             }
 
-            store = FileIndexKeyValueStorage<Guid, Book>.Open(filename, serializer);
+            store = FileIndexKeyValueStorage<Guid, Book>.Open(filename);
             return store;
         }
     }
@@ -123,11 +125,31 @@ namespace ReadonlyDictionary.REPL
     {
         public StorageWrapper<string, JObject> File(string filename)
         {
-            var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, new JsonSerializer<JObject>());
+            var store = FileIndexKeyValueStorage<string, JObject>.Open(filename);
 
             return new StorageWrapper<string, JObject>(store);
         }
     }
+
+    public class Converter : Replify.IReplCommand
+    {
+        public void ConvertToJson(string filename)
+        {
+            using (var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, serializer: new JsonSerializer<JObject>()))
+            {
+
+                var everything = from key in store.GetKeys()
+                                 select new { Key = key, Value = store.Get(key) };
+
+                var everythingJson = JsonConvert.SerializeObject(everything, Formatting.Indented);
+
+                File.WriteAllText(filename + ".keys.json", JsonConvert.SerializeObject(store.GetKeys()));
+                File.WriteAllText(filename + ".json", everythingJson);
+            }
+        }
+    }
+    
+
 
     public class StorageWrapper<TKey, T>
     {
@@ -136,6 +158,34 @@ namespace ReadonlyDictionary.REPL
         public StorageWrapper(IKeyValueStore<TKey, T> store)
         {
             this.store = store;
+        }
+
+        public TKey[] GetKeys()
+        {
+            return this.store.GetKeys().ToArray();
+        }
+
+        public T Get(TKey key)
+        {
+            return this.store.Get(key);
+        }
+
+        public IEnumerable<T> GetAll()
+        {
+            foreach(var key in GetKeys())
+            {
+                yield return Get(key);
+            }
+        }
+
+        public long Count()
+        {
+            return this.GetAll().LongCount();
+        }
+
+        public override string ToString()
+        {
+            return store.ToString();
         }
     }
 

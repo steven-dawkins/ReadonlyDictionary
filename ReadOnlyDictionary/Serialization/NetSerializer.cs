@@ -1,5 +1,6 @@
 ﻿using NetSerializer;
 using System.IO;
+using System;
 
 namespace ReadOnlyDictionary.Serialization
 {
@@ -31,6 +32,11 @@ namespace ReadOnlyDictionary.Serialization
 
                 return value;
             }
+        }
+
+        public object GetState()
+        {
+            return null;
         }
     }
 }

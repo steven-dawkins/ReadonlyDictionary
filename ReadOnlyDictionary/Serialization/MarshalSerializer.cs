@@ -49,5 +49,10 @@ namespace ReadOnlyDictionary.Serialization
 
             Marshal.FreeHGlobal(i);
         }
+
+        public object GetState()
+        {
+            return null;
+        }
     }
 }
