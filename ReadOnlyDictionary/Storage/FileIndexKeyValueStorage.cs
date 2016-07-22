@@ -306,50 +306,50 @@ namespace ReadOnlyDictionary.Storage
             header.SerializerJsonStart = header.IndexPosition + indexBytes.Length;
             header.SerializerJsonLength = serializerJsonBytes.Length;
 
-            // Resize down to minimum size
+            // Resize to include index
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength);
 
             reader.WriteArray(header.IndexPosition, indexBytes);
             reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
 
-            //var customContent = new { A = "Test", B = "Ipsum" };
-            //var customContentBytes = new[] { Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(customContent)) };
+            var customContent = new { A = "Test", B = "Ipsum" };
+            var customContentBytes = new[] { Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(customContent)) };
 
-            //var blocks = new CustomDataBlock[]
-            //    {
-            //        new CustomDataBlock()
-            //        {
-            //            //Name = "Testing".ToCharArray(),
-            //            Position = header.IndexPosition + indexBytes.Length + serializerJsonBytes.Length,
-            //            Length = customContentBytes.Length
-            //        }
-            //    };
+            var blocks = new CustomDataBlock[]
+                {
+                    new CustomDataBlock()
+                    {
+                        //Name = "Testing".ToCharArray(),
+                        Position = header.IndexPosition + indexBytes.Length + serializerJsonBytes.Length,
+                        Length = customContentBytes.Length
+                    }
+                };
 
-            //fixed(CustomDataBlock * p = &blocks[0])
-            //{
-            //    var str = "Testing";
+            fixed (CustomDataBlock* p = &blocks[0])
+            {
+                var str = "Testing";
 
-            //    for(int i = 0;i < str.Length; i++)
-            //    {
-            //        p->Name[i] = str[i];
-            //    }
-            //}
+                for (int i = 0; i < str.Length; i++)
+                {
+                    p->Name[i] = str[i];
+                }
+            }
 
-            //var customBlockPosition = header.IndexPosition + header.IndexLength + header.SerializerJsonLength;
-            //for (int i = 0; i < blocks.Length; i++)
-            //{
-            //    this.reader.Write(customBlockPosition, ref blocks[i]);
-            //    customBlockPosition += sizeof(CustomDataBlock);
-            //}
+            // Resize down to include custom blocks
+            this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
 
-            //for (int i = 0; i < blocks.Length; i++)
-            //{
-            //    this.reader.WriteArray(customBlockPosition, customContentBytes[i]);
-            //    customBlockPosition += customContentBytes[i].LongLength;
-            //}
+            var customBlockPosition = header.IndexPosition + header.IndexLength + header.SerializerJsonLength;
+            for (int i = 0; i < blocks.Length; i++)
+            {
+                this.reader.Write(customBlockPosition, ref blocks[i]);
+                customBlockPosition += sizeof(CustomDataBlock);
+            }
 
-            //// Resize down to minimum size
-            //this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + header.customBlockCount * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
+            for (int i = 0; i < blocks.Length; i++)
+            {
+                this.reader.WriteArray(customBlockPosition, customContentBytes[i]);
+                customBlockPosition += customContentBytes[i].LongLength;
+            }            
 
             // store header in file
             //header.customBlockCount = blocks.Length;
