@@ -306,6 +306,9 @@ namespace ReadOnlyDictionary.Storage
             header.SerializerJsonStart = header.IndexPosition + indexBytes.Length;
             header.SerializerJsonLength = serializerJsonBytes.Length;
 
+            // Resize down to minimum size
+            this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength);
+
             reader.WriteArray(header.IndexPosition, indexBytes);
             reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
 

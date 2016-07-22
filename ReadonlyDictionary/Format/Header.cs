@@ -22,11 +22,11 @@ namespace ReadonlyDictionary.Format
         //public int customBlockCount;
     }
 
-    unsafe internal struct CustomDataBlock
-    {
-        public fixed char Name[256];
-        public long Position;
-        public int Length;
-    }
+    //unsafe internal struct CustomDataBlock
+    //{
+    //    public fixed char Name[256];
+    //    public long Position;
+    //    public int Length;
+    //}
 
 }
