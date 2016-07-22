@@ -2,7 +2,7 @@
 
 namespace ReadonlyDictionary.Index
 {
-    public interface IIndexFactory<T>
+    public interface IIndexSerializer<T>
     {
         IIndex<T> Deserialize(byte[] bytes);
         byte[] Serialize(IEnumerable<KeyValuePair<T, long>> values);

@@ -170,6 +170,19 @@ namespace ReadonlyDictionary.REPL
             return this.store.Get(key);
         }
 
+        public IEnumerable<T> GetAll()
+        {
+            foreach(var key in GetKeys())
+            {
+                yield return Get(key);
+            }
+        }
+
+        public long Count()
+        {
+            return this.GetAll().LongCount();
+        }
+
         public override string ToString()
         {
             return store.ToString();

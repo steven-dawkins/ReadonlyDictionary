@@ -6,7 +6,6 @@ using ReadOnlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -14,8 +13,7 @@ namespace ReadOnlyDictionary.Storage
 {
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
-        private readonly ISerializer<TValue> serializer;
-        private readonly IIndexFactory<TKey> indexFactory;
+        private readonly ISerializer<TValue> serializer;        
         
         private readonly IIndex<TKey> index;
 
@@ -30,7 +28,7 @@ namespace ReadOnlyDictionary.Storage
             long count,
             ISerializer<TValue> serializer = null,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
-            IIndexFactory<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexSerializer = null)
         {
             var fi = new FileInfo(filename);
 
@@ -40,17 +38,17 @@ namespace ReadOnlyDictionary.Storage
             {
                 try
                 {
-                    return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexFactory);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexSerializer);
                 }
                 catch(NoMagicException)
                 {
                     // no magic almost certainly means the file was partially written as the header is written last
-                    return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer);
                 }
             }
             else
             {
-                return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory);
+                return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer);
             }
         }
 
@@ -95,7 +93,7 @@ namespace ReadOnlyDictionary.Storage
             ISerializer<TValue> serializer,
             long count,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
-            IIndexFactory<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexFactory = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
@@ -106,7 +104,7 @@ namespace ReadOnlyDictionary.Storage
             string filename,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             ISerializer<TValue> serializer = null,
-            IIndexFactory<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexFactory = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetReaderForStrategy(strategy, fi);
@@ -120,15 +118,15 @@ namespace ReadOnlyDictionary.Storage
             ISerializer<TValue> serializer,
             long count,
             IRandomAccessStore reader,
-            IIndexFactory<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexSerializer = null)
         {
             this.serializer = serializer;
-            this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
+            indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
             this.reader = reader;
 
             try
             {
-                WriteData(values, serializer, count, fi);
+                WriteData(values, serializer, indexSerializer, count, fi);
             }
             catch(Exception)
             {
@@ -146,11 +144,11 @@ namespace ReadOnlyDictionary.Storage
             FileInfo fi, 
             IRandomAccessStore reader, 
             ISerializer<TValue> serializer = null, 
-            IIndexFactory<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexSerializer = null)
         {
             try
             {
-                this.indexFactory = indexFactory ?? new DictionaryIndexFactory<TKey>();
+                indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
                 this.reader = reader;
 
                 // file begins with header
@@ -195,7 +193,7 @@ namespace ReadOnlyDictionary.Storage
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
-                this.index = this.indexFactory.Deserialize(indexJsonBytes);
+                this.index = indexSerializer.Deserialize(indexJsonBytes);
             }
             catch(Exception)
             {
@@ -246,7 +244,12 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        private void WriteData(IEnumerable<KeyValuePair<TKey, TValue>> values, ISerializer<TValue> serializer, long count, FileInfo filename)
+        private void WriteData(
+            IEnumerable<KeyValuePair<TKey, TValue>> values, 
+            ISerializer<TValue> serializer, 
+            IIndexSerializer<TKey> indexSerializer, 
+            long count, 
+            FileInfo filename)
         {
             var header = new Header();
 
@@ -273,7 +276,7 @@ namespace ReadOnlyDictionary.Storage
                 position += serialized.Length + sizeof(Int32);
             }
 
-            var indexBytes = this.indexFactory.Serialize(indexValues);
+            var indexBytes = indexSerializer.Serialize(indexValues);
             
             header.IndexPosition = position;
             header.IndexLength = indexBytes.Length;
@@ -298,6 +301,7 @@ namespace ReadOnlyDictionary.Storage
             header.Version = Header.CurrentVersion;
 
             var serializerJsonBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(serializer.GetState()));
+
             header.SerializerJsonStart = header.IndexPosition + indexBytes.Length;
             header.SerializerJsonLength = serializerJsonBytes.Length;
 

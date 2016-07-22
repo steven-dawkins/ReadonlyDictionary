@@ -1,15 +1,12 @@
 ﻿using Newtonsoft.Json;
-using ReadonlyDictionary.Index;
-using ReadOnlyDictionary.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ReadonlyDictionary.Index
 {
-    public class DictionaryIndexFactory<T> : IIndexFactory<T>
+    public class DictionaryIndexSerializer<T> : IIndexSerializer<T>
     {
         public IIndex<T> Deserialize(byte[] bytes)
         {
