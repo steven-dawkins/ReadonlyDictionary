@@ -59,6 +59,7 @@
     <Compile Include="Index\IIndex.cs" />
     <Compile Include="Serialization\JsonFlyweightSerializer.cs" />
     <Compile Include="Storage\FileIndexKeyValueStorage.cs" />
+    <Compile Include="Storage\FileIndexKeyValueStorageBuilder.cs" />
     <Compile Include="Storage\IKeyValueStore.cs" />
     <Compile Include="Storage\InMemoryKeyValueStorage.cs" />
     <Compile Include="Serialization\JsonSerializer.cs" />

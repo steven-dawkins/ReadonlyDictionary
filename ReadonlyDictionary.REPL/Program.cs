@@ -1,17 +1,16 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using ReadOnlyDictionary;
+using ReadonlyDictionary.Storage;
 using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
-using ReadOnlyDictionaryTests;
 using ReadOnlyDictionaryTests.SampleData;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadOnlyDictionaryTests.SampleData.Book>;
 
 namespace ReadonlyDictionary.REPL
 {
@@ -111,12 +110,12 @@ namespace ReadonlyDictionary.REPL
         private static IKeyValueStore<Guid, Book> CreateFileIndexKeyValueStorage(KeyValuePair<Guid, Book>[] randomData, ISerializer<Book> serializer, string filename)
         {
             IKeyValueStore<Guid, Book> store;
-            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(randomData, filename, 100 * 1024 * 1024, serializer, randomData.LongLength))
+            using (var temp = BookStorage.Create(randomData, filename, 100 * 1024 * 1024, serializer, randomData.LongLength))
             {
 
             }
 
-            store = FileIndexKeyValueStorage<Guid, Book>.Open(filename);
+            store = BookStorage.Open(filename);
             return store;
         }
     }
@@ -125,7 +124,7 @@ namespace ReadonlyDictionary.REPL
     {
         public StorageWrapper<string, JObject> File(string filename)
         {
-            var store = FileIndexKeyValueStorage<string, JObject>.Open(filename);
+            var store = FileIndexKeyValueStorageBuilder<string, JObject>.Open(filename);
 
             return new StorageWrapper<string, JObject>(store);
         }
@@ -135,7 +134,7 @@ namespace ReadonlyDictionary.REPL
     {
         public void ConvertToJson(string filename)
         {
-            using (var store = FileIndexKeyValueStorage<string, JObject>.Open(filename, serializer: new JsonSerializer<JObject>()))
+            using (var store = FileIndexKeyValueStorageBuilder<string, JObject>.Open(filename, serializer: new JsonSerializer<JObject>()))
             {
 
                 var everything = from key in store.GetKeys()

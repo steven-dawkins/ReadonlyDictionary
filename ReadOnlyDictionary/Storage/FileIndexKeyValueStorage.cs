@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ReadOnlyDictionary.Storage
-{
+{    
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
         private readonly ISerializer<TValue> serializer;        
@@ -19,98 +19,7 @@ namespace ReadOnlyDictionary.Storage
         private readonly IIndex<TKey> index;
 
         private IRandomAccessStore reader;
-
-        public enum AccessStrategy { Streams, MemoryMapped }
-
-        public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
-            IEnumerable<KeyValuePair<TKey, TValue>> values,
-            string filename,
-            long initialSize,
-            long count,
-            ISerializer<TValue> serializer = null,
-            AccessStrategy strategy = AccessStrategy.MemoryMapped,
-            IIndexSerializer<TKey> indexSerializer = null)
-        {
-            var fi = new FileInfo(filename);
-
-            IRandomAccessStore reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
-
-            if (fi.Exists)
-            {
-                try
-                {
-                    return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexSerializer);
-                }
-                catch(NoMagicException)
-                {
-                    // no magic almost certainly means the file was partially written as the header is written last
-                    return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer);
-                }
-            }
-            else
-            {
-                return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer);
-            }
-        }
-
-        private static IRandomAccessStore GetCreateReaderForStrategy(long initialSize, AccessStrategy strategy, FileInfo fi)
-        {
-            IRandomAccessStore reader;
-            switch (strategy)
-            {
-                case AccessStrategy.MemoryMapped:
-                    reader = new MemoryMappedStore(fi, initialSize);
-                    break;
-                case AccessStrategy.Streams:
-                    reader = new StreamStore(fi, initialSize);
-                    break;
-                default:
-                    throw new Exception("Unexpected access strategy: " + strategy);
-            }
-            return reader;
-        }
-
-        private static IRandomAccessStore GetReaderForStrategy(AccessStrategy strategy, FileInfo fi)
-        {
-            IRandomAccessStore reader;
-            switch (strategy)
-            {
-                case AccessStrategy.MemoryMapped:
-                    reader = new MemoryMappedStore(fi);
-                    break;
-                case AccessStrategy.Streams:
-                    reader = new StreamStore(fi);
-                    break;
-                default:
-                    throw new Exception("Unexpected access strategy: " + strategy);
-            }
-            return reader;
-        }
-
-        public static FileIndexKeyValueStorage<TKey, TValue> Create(
-            IEnumerable<KeyValuePair<TKey, TValue>> values,
-            string filename,
-            long initialSize,
-            ISerializer<TValue> serializer,
-            long count,
-            AccessStrategy strategy = AccessStrategy.MemoryMapped,
-            IIndexSerializer<TKey> indexFactory = null)
-        {
-            var fi = new FileInfo(filename);
-            var reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
-            return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory);
-        }
-
-        public static FileIndexKeyValueStorage<TKey, TValue> Open(
-            string filename,
-            AccessStrategy strategy = AccessStrategy.MemoryMapped,
-            ISerializer<TValue> serializer = null,
-            IIndexSerializer<TKey> indexFactory = null)
-        {
-            var fi = new FileInfo(filename);
-            var reader = GetReaderForStrategy(strategy, fi);
-            return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexFactory);
-        }
+        private readonly Dictionary<string, CustomDataBlock> customBlockIndex;
 
         public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -119,7 +28,8 @@ namespace ReadOnlyDictionary.Storage
             ISerializer<TValue> serializer,
             long count,
             IRandomAccessStore reader,
-            IIndexSerializer<TKey> indexSerializer = null)
+            IIndexSerializer<TKey> indexSerializer = null,
+            IEnumerable<KeyValuePair<string, object>> additionalData = null)
         {
             this.serializer = serializer;
             indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
@@ -127,7 +37,7 @@ namespace ReadOnlyDictionary.Storage
 
             try
             {
-                WriteData(values, serializer, indexSerializer, count, fi);
+                WriteData(values, serializer, indexSerializer, count, fi, additionalData);
             }
             catch(Exception)
             {
@@ -141,16 +51,18 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        public FileIndexKeyValueStorage(
+        public unsafe FileIndexKeyValueStorage(
             FileInfo fi, 
             IRandomAccessStore reader, 
             ISerializer<TValue> serializer = null, 
             IIndexSerializer<TKey> indexSerializer = null)
         {
+            indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
+            this.reader = reader;
+
+
             try
-            {
-                indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
-                this.reader = reader;
+            {                
 
                 // file begins with header
                 Header header = reader.Read<Header>(0);
@@ -195,6 +107,18 @@ namespace ReadOnlyDictionary.Storage
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
                 this.index = indexSerializer.Deserialize(indexJsonBytes);
+
+                var blocks = new List<CustomDataBlock>(header.customBlockCount);
+
+                for(int i = 0; i < header.customBlockCount; i++)
+                {
+                    long customBlockPosition = GetCustomBlockPosition(header, i);
+                    var block = reader.Read<CustomDataBlock>(customBlockPosition);
+
+                    blocks.Add(block);                 
+                }
+
+                this.customBlockIndex = blocks.ToDictionary(b => new string(b.Name).Trim());
             }
             catch(Exception)
             {
@@ -202,6 +126,11 @@ namespace ReadOnlyDictionary.Storage
                 this.reader.Dispose();
                 throw;
             }
+        }
+
+        private static unsafe long GetCustomBlockPosition(Header header, int i)
+        {
+            return header.IndexPosition + header.IndexLength + header.SerializerJsonLength + sizeof(CustomDataBlock) * i;
         }
 
         public bool ContainsKey(TKey key)
@@ -236,6 +165,20 @@ namespace ReadOnlyDictionary.Storage
             return this.index.Keys;
         }
 
+        public T2 GetAdditionalData<T2>(string name)
+        {
+            if (!this.customBlockIndex.ContainsKey(name))
+            {
+                return default(T2);
+            }
+
+            var block = this.customBlockIndex[name];
+
+            var blockBytes = reader.ReadArray(block.Position, block.Length);
+            var blockJson = Encoding.ASCII.GetString(blockBytes);
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<T2>(blockJson);
+        }
+
         public void Dispose()
         {
             if (this.reader != null)
@@ -250,8 +193,10 @@ namespace ReadOnlyDictionary.Storage
             ISerializer<TValue> serializer,
             IIndexSerializer<TKey> indexSerializer,
             long count,
-            FileInfo filename)
+            FileInfo filename,
+            IEnumerable<KeyValuePair<string, object>> additionalBlocks)
         {
+            additionalBlocks = additionalBlocks ?? new KeyValuePair<string, object>[] { };
             var header = new Header();
 
             // allocate space for index
@@ -312,52 +257,49 @@ namespace ReadOnlyDictionary.Storage
             reader.WriteArray(header.IndexPosition, indexBytes);
             reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
 
-            var customContent = new { A = "Test", B = "Ipsum" };
-            var customContentBytes = new[] { Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(customContent)) };
+            var c = additionalBlocks.Zip(Enumerable.Range(0, int.MaxValue), (a, b) => new {
+                Name = a.Key,
+                Bytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value)),
+                Position = header.IndexPosition + indexBytes.Length + serializerJsonBytes.Length + sizeof(CustomDataBlock) * b }).ToArray();
 
-            var blocks = new CustomDataBlock[]
-                {
-                    new CustomDataBlock()
-                    {
-                        //Name = "Testing".ToCharArray(),
-                        Position = header.IndexPosition + indexBytes.Length + serializerJsonBytes.Length,
-                        Length = customContentBytes.Length
-                    }
-                };
-
-            fixed (CustomDataBlock* p = &blocks[0])
-            {
-                var str = "Testing";
-
-                for (int i = 0; i < str.Length; i++)
-                {
-                    p->Name[i] = str[i];
-                }
-            }
+            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes, content.Position)).ToArray();        
 
             // Resize down to include custom blocks
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
 
-            var customBlockPosition = header.IndexPosition + header.IndexLength + header.SerializerJsonLength;
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                this.reader.Write(customBlockPosition, ref blocks[i]);
-                customBlockPosition += sizeof(CustomDataBlock);
+            var customDataPosition = header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock);
+            
+            for (int i = 0; i < c.Length; i++)
+            {                
+                blocks[i].Position = customDataPosition;                
+                this.reader.WriteArray(blocks[i].Position, c[i].Bytes);                
+                this.reader.Write(GetCustomBlockPosition(header, i), ref blocks[i]);                
+
+                customDataPosition += c[i].Bytes.Length;
             }
-
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                this.reader.WriteArray(customBlockPosition, customContentBytes[i]);
-                customBlockPosition += customContentBytes[i].LongLength;
-            }            
-
+       
             // store header in file
-            //header.customBlockCount = blocks.Length;
+            header.customBlockCount = blocks.Length;
             header.Count = count;
             header.magic = Header.expectedMagic;
             reader.Write(0, ref header);
 
             reader.Flush();
+        }
+
+        private unsafe CustomDataBlock ToCustomDataBlock(string name, byte[] customContentBytes, long position)
+        {            
+            var result = new CustomDataBlock();
+
+            result.Position = position;
+            result.Length = customContentBytes.Length;
+
+            for (int i = 0; i < name.Length; i++)
+            {
+                result.Name[i] = name[i];
+            }
+
+            return result;
         }
 
         public override string ToString()
