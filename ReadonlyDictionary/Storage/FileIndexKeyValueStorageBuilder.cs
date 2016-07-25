@@ -21,7 +21,8 @@ namespace ReadonlyDictionary.Storage
             long count,
             ISerializer<TValue> serializer = null,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
-            IIndexSerializer<TKey> indexSerializer = null)
+            IIndexSerializer<TKey> indexSerializer = null,
+            IEnumerable<KeyValuePair<string, object>> additionalMetadata = null)
         {
             var fi = new FileInfo(filename);
 
@@ -36,12 +37,12 @@ namespace ReadonlyDictionary.Storage
                 catch (NoMagicException)
                 {
                     // no magic almost certainly means the file was partially written as the header is written last
-                    return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer);
+                    return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer, additionalData: additionalMetadata);
                 }
             }
             else
             {
-                return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer);
+                return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexSerializer, additionalData: additionalMetadata);
             }
         }
 
