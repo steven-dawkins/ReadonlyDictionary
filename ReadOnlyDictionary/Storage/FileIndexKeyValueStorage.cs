@@ -257,12 +257,13 @@ namespace ReadOnlyDictionary.Storage
             reader.WriteArray(header.IndexPosition, indexBytes);
             reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
 
-            var c = additionalBlocks.Zip(Enumerable.Range(0, int.MaxValue), (a, b) => new {
+            var c = additionalBlocks.Select(a => new
+            {
                 Name = a.Key,
-                Bytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value)),
-                Position = header.IndexPosition + indexBytes.Length + serializerJsonBytes.Length + sizeof(CustomDataBlock) * b }).ToArray();
+                Bytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value))
+            }).ToArray();
 
-            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes, content.Position)).ToArray();        
+            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();        
 
             // Resize down to include custom blocks
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
@@ -287,11 +288,10 @@ namespace ReadOnlyDictionary.Storage
             reader.Flush();
         }
 
-        private unsafe CustomDataBlock ToCustomDataBlock(string name, byte[] customContentBytes, long position)
+        private unsafe CustomDataBlock ToCustomDataBlock(string name, byte[] customContentBytes)
         {            
             var result = new CustomDataBlock();
-
-            result.Position = position;
+            
             result.Length = customContentBytes.Length;
 
             for (int i = 0; i < name.Length; i++)
