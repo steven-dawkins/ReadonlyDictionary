@@ -40,6 +40,7 @@ namespace ReadOnlyDictionaryTests
             var timer = new Stopwatch();
             timer.Start();
 
+            // warmup pass
             for (int i = 0; i < randomData.Length; i++)
             {
                 var item = randomData[i];
@@ -47,7 +48,18 @@ namespace ReadOnlyDictionaryTests
                 Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
             }
 
-            Console.WriteLine(timer.ElapsedMilliseconds + "ms");
+            Console.WriteLine(this.GetType().Name + " pass1 " + timer.ElapsedMilliseconds + "ms");
+
+            timer.Restart();
+
+            for (int i = 0; i < randomData.Length; i++)
+            {
+                var item = randomData[i];
+                Assert.AreEqual(item.Value, storage.Get(item.Key));
+                Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
+            }
+
+            Console.WriteLine(this.GetType().Name + "pass2 " + timer.ElapsedMilliseconds + "ms");
         }
     }
 
