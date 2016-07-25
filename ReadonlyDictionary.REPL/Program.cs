@@ -182,6 +182,16 @@ namespace ReadonlyDictionary.REPL
             return this.GetAll().LongCount();
         }
 
+        public string[] GetAdditionalDataKeys()
+        {
+            return this.store.GetAdditionalDataKeys().ToArray();
+        }
+
+        public JObject GetAdditionalData(string key)
+        {
+            return this.store.GetAdditionalData<JObject>(key);
+        }
+
         public override string ToString()
         {
             return store.ToString();

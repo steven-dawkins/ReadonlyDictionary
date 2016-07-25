@@ -179,6 +179,11 @@ namespace ReadOnlyDictionary.Storage
             return Newtonsoft.Json.JsonConvert.DeserializeObject<T2>(blockJson);
         }
 
+        public IEnumerable<string> GetAdditionalDataKeys()
+        {
+            return this.customBlockIndex.Keys;
+        }
+
         public void Dispose()
         {
             if (this.reader != null)

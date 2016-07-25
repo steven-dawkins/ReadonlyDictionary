@@ -9,6 +9,9 @@ namespace ReadOnlyDictionary.Storage
         bool TryGetValue(TKey key, out TValue value);
         uint Count { get; }
         IEnumerable<TKey> GetKeys();
+
+        T2 GetAdditionalData<T2>(string name);
+        IEnumerable<string> GetAdditionalDataKeys();
     }
 
     public static class IKeyValueStoreExtensions

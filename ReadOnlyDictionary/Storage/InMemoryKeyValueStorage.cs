@@ -9,10 +9,12 @@ namespace ReadOnlyDictionary.Storage
     public class InMemoryKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>
     {
         private readonly Dictionary<TKey, TValue> index;
+        private readonly Dictionary<string, object> additionalMetadata;
 
         public InMemoryKeyValueStorage(IEnumerable<KeyValuePair<TKey, TValue>> values)
         {
             this.index = values.ToDictionary(v => v.Key, v => v.Value);
+            this.additionalMetadata = new Dictionary<string, object>();
         }
 
         public bool ContainsKey(TKey key)
@@ -37,6 +39,21 @@ namespace ReadOnlyDictionary.Storage
 
         public void Dispose()
         {
+        }
+
+        public T2 GetAdditionalData<T2>(string name)
+        {
+            if (!additionalMetadata.ContainsKey(name))
+            {
+                return default(T2);
+            }
+
+            return (T2)this.additionalMetadata[name];
+        }
+
+        public IEnumerable<string> GetAdditionalDataKeys()
+        {
+            return this.additionalMetadata.Keys;
         }
     }
 }
