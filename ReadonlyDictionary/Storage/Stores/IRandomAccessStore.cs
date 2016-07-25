@@ -16,7 +16,7 @@ namespace ReadonlyDictionary.Storage.Stores
 
         long Capacity { get; }
 
-        void Write<T>(int position, ref T data) where T : struct;
+        void Write<T>(long position, ref T data) where T : struct;
 
         void WriteArray(long position, byte[] bytes);
 

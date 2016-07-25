@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ReadOnlyDictionary;
 using System.Collections.Generic;
 using System.Linq;
 using ReadOnlyDictionaryTests.SampleData;
@@ -8,7 +7,8 @@ using ReadOnlyDictionary.Serialization;
 using ReadOnlyDictionary.Storage;
 using System.IO;
 using System.Diagnostics;
-using Newtonsoft.Json;
+
+using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadOnlyDictionaryTests.SampleData.Book>;
 
 namespace ReadOnlyDictionaryTests
 {
@@ -86,16 +86,17 @@ namespace ReadOnlyDictionaryTests
     public abstract class FileIndexKeyValueStorageBase : TestBase
     {
         protected void WriteStorage(
-            ISerializer<Book> serializer, 
-            FileIndexKeyValueStorage<Guid, Book>.AccessStrategy strategy = FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.MemoryMapped)
+            ISerializer<Book> serializer,
+            BookStorage.AccessStrategy strategy = BookStorage.AccessStrategy.MemoryMapped)
         {
-            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength, strategy))
+            using (var temp = BookStorage.Create(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength, strategy))
             {
 
             }
 
-            storage = FileIndexKeyValueStorage<Guid, Book>.Open("temp.raw", serializer: serializer);
+            storage = BookStorage.Open("temp.raw", serializer: serializer);
         }
+
 
     }
 
@@ -124,16 +125,16 @@ namespace ReadOnlyDictionaryTests
         public void TestFlyweightSerialization()
         {
             var serializer = new JsonFlyweightSerializer<Book>();
-            var strategy = FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams;
+            var strategy = BookStorage.AccessStrategy.Streams;
 
             var data = RandomDataGenerator.RandomData(10000).ToArray();
 
-            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
+            using (var temp = BookStorage.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
             {
 
             }
             
-            using (var reader = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", strategy, null))            
+            using (var reader = BookStorage.Open("temp2.raw", strategy, null))            
             {
                 for (int i = 0; i < data.Length; i++)
                 {
@@ -162,31 +163,30 @@ namespace ReadOnlyDictionaryTests
 
         public override void StorageInitalize()
         {
-            WriteStorage(serializer, FileIndexKeyValueStorage<Guid,Book>.AccessStrategy.Streams);
-        }
+            WriteStorage(serializer, BookStorage.AccessStrategy.Streams);
+        }        
 
         [TestMethod]
-        public void TestDualRead()
+        public void TestMetadata()
         {
-            var serializer = new NetSerializer<Book>();
+            var additionalMetadata = new KeyValuePair<string, object>[]
+            {
+                new KeyValuePair<string, object>("Lorem", "Ipsum"),
+                new KeyValuePair<string, object>("A", new Book("The Hobbit", "", ""))
+            };
 
-            var data = RandomDataGenerator.RandomData(10000).ToArray();
+            var values = RandomDataGenerator.RandomData(1000);
 
-            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
+            using (var temp = BookStorage.Create(values, "temp_metadata.raw", 1 * 1024, serializer, 100000, additionalMetadata: additionalMetadata))
             {
 
             }
 
-            using (var temp1 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams, serializer))
-            using (var temp2 = FileIndexKeyValueStorage<Guid, Book>.Open("temp2.raw", FileIndexKeyValueStorage<Guid, Book>.AccessStrategy.Streams, serializer))
+            using (var temp = BookStorage.Open("temp_metadata.raw", serializer: serializer))
             {
-                for (int i = 0; i < data.Length; i++)
-                {
-                    var item = data[i];
-                    Assert.AreEqual(item.Value, temp1.Get(item.Key));
-                    Assert.AreEqual(item.Value, temp2.Get(item.Key));
-                }
-            }
+                Assert.AreEqual(additionalMetadata[0].Value, temp.GetAdditionalData<string>(additionalMetadata[0].Key));
+                Assert.AreEqual(additionalMetadata[1].Value, temp.GetAdditionalData<Book>(additionalMetadata[1].Key));
+            }            
         }
     }
 
@@ -216,7 +216,7 @@ namespace ReadOnlyDictionaryTests
         {
             var serializer = new NetSerializer<Book>();
 
-            using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
+            using (var temp = BookStorage.Create(RandomDataGenerator.RandomData(100000), "temp_expanding.raw", 1 * 1024, serializer, 100000))
             {
 
             }
@@ -231,7 +231,7 @@ namespace ReadOnlyDictionaryTests
 
             try
             {
-                using (var temp = FileIndexKeyValueStorage<Guid, Book>.Create(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
+                using (var temp = BookStorage.Create(ExceptionalData(), "temp_exceptional.raw", 1 * 1024 * 1024, serializer, 2))
                 {
 
                 }
@@ -239,6 +239,30 @@ namespace ReadOnlyDictionaryTests
             catch (TestException)
             {
                 Assert.IsFalse(File.Exists("temp_exceptional.raw"));
+            }
+        }
+
+        [TestMethod]
+        public void TestDualRead()
+        {
+            var serializer = new NetSerializer<Book>();
+
+            var data = RandomDataGenerator.RandomData(10000).ToArray();
+
+            using (var temp = BookStorage.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
+            {
+
+            }
+
+            using (var temp1 = BookStorage.Open("temp2.raw", BookStorage.AccessStrategy.Streams, serializer))
+            using (var temp2 = BookStorage.Open("temp2.raw", BookStorage.AccessStrategy.Streams, serializer))
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    var item = data[i];
+                    Assert.AreEqual(item.Value, temp1.Get(item.Key));
+                    Assert.AreEqual(item.Value, temp2.Get(item.Key));
+                }
             }
         }
     }

@@ -69,7 +69,7 @@ namespace ReadonlyDictionary.Storage.Stores
             accessor.WriteArray(position, bytes, 0, bytes.Length);
         }
 
-        public void Write<T>(int position, ref T data) where T : struct
+        public void Write<T>(long position, ref T data) where T : struct
         {
             accessor.Write(position, ref data);
         }

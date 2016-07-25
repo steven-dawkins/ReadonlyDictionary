@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace ReadonlyDictionary.Format
 {
@@ -17,6 +18,27 @@ namespace ReadonlyDictionary.Format
         public int Version;
         public SerializationStrategyEnum SerializationStrategy;
         public long SerializerJsonStart;
-        public int SerializerJsonLength;               
+        public int SerializerJsonLength;
+
+        public int customBlockCount;
     }
+
+    [StructLayout(LayoutKind.Explicit, /*Size = 16,*/ CharSet = CharSet.Unicode, Pack = 1)]
+    unsafe internal struct CustomDataBlock
+    {
+        [FieldOffset(0)]
+        public Int64 Position;
+
+        [FieldOffset(8)]
+        public Int32 Length;
+
+        [FieldOffset(12)]
+        public fixed char Name[256];
+
+        public override string ToString()
+        {            
+            return $"{Position} - {Length}";
+        }
+    }
+
 }
