@@ -265,5 +265,26 @@ namespace ReadOnlyDictionaryTests
                 }
             }
         }
+
+        [TestMethod]
+        public void TestMultithreadedRead()
+        {
+            var serializer = new NetSerializer<Book>();
+
+            var data = RandomDataGenerator.RandomData(10000).ToArray();
+
+            using (var temp = BookStorage.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
+            {
+
+            }
+
+            using (var temp1 = BookStorage.Open("temp2.raw", BookStorage.AccessStrategy.Streams, serializer))            
+            {
+                data.AsParallel().WithDegreeOfParallelism(10).ForAll(item =>
+                {
+                    Assert.AreEqual(item.Value, temp1.Get(item.Key));
+                });
+            }
+        }
     }
 }

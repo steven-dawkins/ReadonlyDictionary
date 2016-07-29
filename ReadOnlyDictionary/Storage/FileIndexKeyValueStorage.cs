@@ -60,7 +60,6 @@ namespace ReadOnlyDictionary.Storage
             indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
             this.reader = reader;
 
-
             try
             {                
 
@@ -135,53 +134,78 @@ namespace ReadOnlyDictionary.Storage
 
         public bool ContainsKey(TKey key)
         {
-            return this.index.ContainsKey(key);
+            lock (mutex)
+            {
+                return this.index.ContainsKey(key);
+            }
         }
+
+        private readonly object mutex = new object();
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            long index;
-            if (this.index.TryGetValue(key, out index))
+            lock (mutex)
             {
-                var serializedSize = this.reader.ReadInt32(index);
-                byte[] serialized = this.reader.ReadArray(index + sizeof(Int32), serializedSize);
-                value = serializer.Deserialize(serialized);
-                return true;
-            }
-            else
-            {
-                value = default(TValue);
-                return false;
+                long index;
+                if (this.index.TryGetValue(key, out index))
+                {
+
+                    var serializedSize = this.reader.ReadInt32(index);
+                    byte[] serialized = this.reader.ReadArray(index + sizeof(Int32), serializedSize);
+                    value = serializer.Deserialize(serialized);
+                    return true;
+
+                }
+                else
+                {
+                    value = default(TValue);
+                    return false;
+                }
             }
         }
 
         public uint Count
         {
-            get { return this.index.Count; }
+            get
+            {
+                lock (mutex)
+                {
+                    return this.index.Count;
+                }
+            }
         }
 
         public IEnumerable<TKey> GetKeys()
         {
-            return this.index.Keys;
+            lock (mutex)
+            {
+                return this.index.Keys;
+            }
         }
 
         public T2 GetAdditionalData<T2>(string name)
         {
-            if (!this.customBlockIndex.ContainsKey(name))
+            lock (mutex)
             {
-                return default(T2);
+                if (!this.customBlockIndex.ContainsKey(name))
+                {
+                    return default(T2);
+                }
+
+                var block = this.customBlockIndex[name];
+
+                var blockBytes = reader.ReadArray(block.Position, block.Length);
+                var blockJson = Encoding.ASCII.GetString(blockBytes);
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<T2>(blockJson);
             }
-
-            var block = this.customBlockIndex[name];
-
-            var blockBytes = reader.ReadArray(block.Position, block.Length);
-            var blockJson = Encoding.ASCII.GetString(blockBytes);
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<T2>(blockJson);
         }
 
         public IEnumerable<string> GetAdditionalDataKeys()
         {
-            return this.customBlockIndex.Keys;
+            lock (mutex)
+            {
+                return this.customBlockIndex.Keys;
+            }
         }
 
         public void Dispose()
