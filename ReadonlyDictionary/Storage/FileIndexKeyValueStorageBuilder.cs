@@ -1,8 +1,8 @@
 ﻿using ReadonlyDictionary.Exceptions;
 using ReadonlyDictionary.Index;
 using ReadonlyDictionary.Storage.Stores;
-using ReadOnlyDictionary.Serialization;
-using ReadOnlyDictionary.Storage;
+using ReadonlyDictionary.Serialization;
+using ReadonlyDictionary.Storage;
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using MPHTest.MPH;
 using System.IO.MemoryMappedFiles;
 using System.IO;
-using ReadOnlyDictionary.Serialization;
-using ReadOnlyDictionary.Storage;
+using ReadonlyDictionary.Serialization;
+using ReadonlyDictionary.Storage;
 
-namespace ReadOnlyDictionary {        
+namespace ReadonlyDictionary {        
 
     //public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
     //{

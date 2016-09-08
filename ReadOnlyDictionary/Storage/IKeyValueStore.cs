@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ReadOnlyDictionary.Storage
+namespace ReadonlyDictionary.Storage
 {
     public interface IKeyValueStore<TKey, TValue> : IDisposable
     {

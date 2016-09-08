@@ -1,16 +1,15 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ReadonlyDictionary.Storage;
-using ReadOnlyDictionary.Serialization;
-using ReadOnlyDictionary.Storage;
-using ReadOnlyDictionaryTests.SampleData;
+using ReadonlyDictionary.Serialization;
+using ReadonlyDictionaryTests.SampleData;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadOnlyDictionaryTests.SampleData.Book>;
+using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
 
 namespace ReadonlyDictionary.REPL
 {

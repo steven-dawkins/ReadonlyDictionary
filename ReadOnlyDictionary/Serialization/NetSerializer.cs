@@ -2,7 +2,7 @@
 using System.IO;
 using System;
 
-namespace ReadOnlyDictionary.Serialization
+namespace ReadonlyDictionary.Serialization
 {
     public class NetSerializer<T> : ISerializer<T>
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReadOnlyDictionary.Storage
+namespace ReadonlyDictionary.Storage
 {
     public class InMemoryKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>
     {

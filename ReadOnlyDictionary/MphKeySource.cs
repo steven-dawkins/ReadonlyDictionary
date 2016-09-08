@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReadOnlyDictionary
+namespace ReadonlyDictionary
 {
     public class MphKeySource<TKey> : IKeySource
     {

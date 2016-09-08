@@ -2,7 +2,7 @@
 using ReadonlyDictionary.Format;
 using ReadonlyDictionary.Index;
 using ReadonlyDictionary.Storage.Stores;
-using ReadOnlyDictionary.Serialization;
+using ReadonlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ReadOnlyDictionary.Storage
+namespace ReadonlyDictionary.Storage
 {    
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
@@ -62,7 +62,6 @@ namespace ReadOnlyDictionary.Storage
 
             try
             {                
-
                 // file begins with header
                 Header header = reader.Read<Header>(0);
 
