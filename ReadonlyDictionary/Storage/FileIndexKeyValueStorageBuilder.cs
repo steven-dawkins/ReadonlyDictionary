@@ -6,7 +6,7 @@ using ReadonlyDictionary.Storage;
 using System;
 using System.Collections.Generic;
 using System.IO;
-
+using Newtonsoft.Json;
 
 namespace ReadonlyDictionary.Storage
 {
@@ -88,11 +88,13 @@ namespace ReadonlyDictionary.Storage
             long count,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexSerializer<TKey> indexFactory = null,
-            IEnumerable<KeyValuePair<string, object>> additionalMetadata = null)
+            IEnumerable<KeyValuePair<string, object>> additionalMetadata = null,
+            JsonSerializerSettings additionalDataSerializerSettings = null
+            )
         {
             var fi = new FileInfo(filename);
             var reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
-            return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory, additionalMetadata);
+            return new FileIndexKeyValueStorage<TKey, TValue>(values, fi, initialSize, serializer, count, reader, indexFactory, additionalMetadata, additionalDataSerializerSettings);
         }
 
         public static FileIndexKeyValueStorage<TKey, TValue> Open(
