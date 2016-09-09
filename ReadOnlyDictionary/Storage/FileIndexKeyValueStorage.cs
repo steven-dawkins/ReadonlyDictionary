@@ -74,33 +74,15 @@ namespace ReadonlyDictionary.Storage
                     throw new InvalidMagicException(fi.FullName);
                 }
 
-                switch (header.SerializationStrategy)
+                if (serializer == null)
                 {
-                    case Header.SerializationStrategyEnum.Json:
-                        this.serializer = new JsonSerializer<TValue>();
-                        break;
-                    case Header.SerializationStrategyEnum.Protobuf:
-                        this.serializer = new ProtobufSerializer<TValue>();
-                        break;
-                    case Header.SerializationStrategyEnum.JsonFlyWeight:
-                        var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
-                        var stateJson = Encoding.ASCII.GetString(stateBytes);
-                        var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
-                        this.serializer = new JsonFlyweightSerializer<TValue>(state);
-                        break;
-                    case Header.SerializationStrategyEnum.Custom:
-                        if (serializer == null)
-                        {
-                            throw new ArgumentException("Readonlydictionary users custom serializer which was not supplied");
-                        }
-                        else
-                        {
-                            this.serializer = serializer;                            
-                        }
-                        break;
-                    default:
-                        throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
+                    this.serializer = this.ReadSerializerFromHeader(header);
+                }
+                else
+                {
+                    this.serializer = serializer;
                 }                
+                     
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
@@ -123,6 +105,26 @@ namespace ReadonlyDictionary.Storage
                 this.Dispose();
                 this.reader.Dispose();
                 throw;
+            }
+        }
+
+        private ISerializer<TValue> ReadSerializerFromHeader(Header header)
+        {
+            switch (header.SerializationStrategy)
+            {
+                case Header.SerializationStrategyEnum.Json:
+                    return new JsonSerializer<TValue>();                    
+                case Header.SerializationStrategyEnum.Protobuf:
+                    return new ProtobufSerializer<TValue>();
+                case Header.SerializationStrategyEnum.JsonFlyWeight:
+                    var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
+                    var stateJson = Encoding.ASCII.GetString(stateBytes);
+                    var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
+                    return new JsonFlyweightSerializer<TValue>(state);
+                case Header.SerializationStrategyEnum.Custom:                    
+                    throw new ArgumentException("Readonlydictionary uses custom serializer which was not supplied");                    
+                default:
+                    throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
             }
         }
 
