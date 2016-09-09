@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace ReadonlyDictionary.Storage
 {    
@@ -29,7 +30,8 @@ namespace ReadonlyDictionary.Storage
             long count,
             IRandomAccessStore reader,
             IIndexSerializer<TKey> indexSerializer = null,
-            IEnumerable<KeyValuePair<string, object>> additionalData = null)
+            IEnumerable<KeyValuePair<string, object>> additionalData = null,
+            JsonSerializerSettings additionalDataSerializerSettings = null)
         {
             this.serializer = serializer;
             indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
@@ -37,7 +39,7 @@ namespace ReadonlyDictionary.Storage
 
             try
             {
-                WriteData(values, serializer, indexSerializer, count, fi, additionalData);
+                WriteData(values, serializer, indexSerializer, count, fi, additionalData, additionalDataSerializerSettings);
             }
             catch(Exception)
             {
@@ -184,7 +186,7 @@ namespace ReadonlyDictionary.Storage
             }
         }
 
-        public T2 GetAdditionalData<T2>(string name)
+        public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
         {
             lock (mutex)
             {
@@ -197,7 +199,7 @@ namespace ReadonlyDictionary.Storage
 
                 var blockBytes = reader.ReadArray(block.Position, block.Length);
                 var blockJson = Encoding.ASCII.GetString(blockBytes);
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<T2>(blockJson);
+                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
             }
         }
 
@@ -224,7 +226,8 @@ namespace ReadonlyDictionary.Storage
             IIndexSerializer<TKey> indexSerializer,
             long count,
             FileInfo filename,
-            IEnumerable<KeyValuePair<string, object>> additionalBlocks)
+            IEnumerable<KeyValuePair<string, object>> additionalBlocks,
+            JsonSerializerSettings additionalDataSerializerSettings)
         {
             additionalBlocks = additionalBlocks ?? new KeyValuePair<string, object>[] { };
             var header = new Header();
@@ -290,7 +293,7 @@ namespace ReadonlyDictionary.Storage
             var c = additionalBlocks.Select(a => new
             {
                 Name = a.Key,
-                Bytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value))
+                Bytes = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(a.Value, additionalDataSerializerSettings))
             }).ToArray();
 
             var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();        

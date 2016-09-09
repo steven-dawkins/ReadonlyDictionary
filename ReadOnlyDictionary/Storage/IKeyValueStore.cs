@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace ReadonlyDictionary.Storage
@@ -10,7 +11,7 @@ namespace ReadonlyDictionary.Storage
         uint Count { get; }
         IEnumerable<TKey> GetKeys();
 
-        T2 GetAdditionalData<T2>(string name);
+        T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null);
         IEnumerable<string> GetAdditionalDataKeys();
     }
 

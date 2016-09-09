@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,7 +42,7 @@ namespace ReadonlyDictionary.Storage
         {
         }
 
-        public T2 GetAdditionalData<T2>(string name)
+        public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
         {
             if (!additionalMetadata.ContainsKey(name))
             {
