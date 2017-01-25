@@ -187,9 +187,14 @@ namespace ReadonlyDictionary.REPL
             return this.store.GetAdditionalDataKeys().ToArray();
         }
 
-        public JObject GetAdditionalData(string key)
+        public JObject GetAdditionalDataObject(string key)
         {
             return this.store.GetAdditionalData<JObject>(key);
+        }
+
+        public JArray GetAdditionalDataArray(string key)
+        {
+            return this.store.GetAdditionalData<JArray>(key);
         }
 
         public override string ToString()
