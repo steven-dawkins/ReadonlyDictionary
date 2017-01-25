@@ -121,8 +121,8 @@ namespace ReadOnlyDictionary.Storage
             }
             catch(Exception)
             {
-                this.Dispose();
-                this.reader.Dispose();
+                this.Dispose();               
+                
                 throw;
             }
         }
