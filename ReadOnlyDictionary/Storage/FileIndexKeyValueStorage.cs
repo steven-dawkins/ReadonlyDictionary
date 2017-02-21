@@ -11,11 +11,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ReadOnlyDictionary.Storage
-{    
+{
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
-        private readonly ISerializer<TValue> serializer;        
-        
+        private readonly ISerializer<TValue> serializer;
+
         private readonly IIndex<TKey> index;
 
         private IRandomAccessStore reader;
@@ -39,12 +39,12 @@ namespace ReadOnlyDictionary.Storage
             {
                 WriteData(values, serializer, indexSerializer, count, fi, additionalData);
             }
-            catch(Exception)
+            catch (Exception)
             {
                 // if something unexpectedly breaks during population (easy to happen externally as we are fed an IEnumerable)
                 // then ensure no partially populated files are left around
                 this.Dispose();
-             
+
                 File.Delete(fi.FullName);
 
                 throw;
@@ -52,17 +52,16 @@ namespace ReadOnlyDictionary.Storage
         }
 
         public unsafe FileIndexKeyValueStorage(
-            FileInfo fi, 
-            IRandomAccessStore reader, 
-            ISerializer<TValue> serializer = null, 
+            FileInfo fi,
+            IRandomAccessStore reader,
+            ISerializer<TValue> serializer = null,
             IIndexSerializer<TKey> indexSerializer = null)
         {
             indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
             this.reader = reader;
 
             try
-            {                
-
+            {
                 // file begins with header
                 Header header = reader.Read<Header>(0);
 
@@ -80,15 +79,18 @@ namespace ReadOnlyDictionary.Storage
                     case Header.SerializationStrategyEnum.Json:
                         this.serializer = new JsonSerializer<TValue>();
                         break;
+
                     case Header.SerializationStrategyEnum.Protobuf:
                         this.serializer = new ProtobufSerializer<TValue>();
                         break;
+
                     case Header.SerializationStrategyEnum.JsonFlyWeight:
                         var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
                         var stateJson = Encoding.ASCII.GetString(stateBytes);
                         var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
                         this.serializer = new JsonFlyweightSerializer<TValue>(state);
                         break;
+
                     case Header.SerializationStrategyEnum.Custom:
                         if (serializer == null)
                         {
@@ -96,12 +98,13 @@ namespace ReadOnlyDictionary.Storage
                         }
                         else
                         {
-                            this.serializer = serializer;                            
+                            this.serializer = serializer;
                         }
                         break;
+
                     default:
                         throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
-                }                
+                }
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
@@ -109,20 +112,20 @@ namespace ReadOnlyDictionary.Storage
 
                 var blocks = new List<CustomDataBlock>(header.customBlockCount);
 
-                for(int i = 0; i < header.customBlockCount; i++)
+                for (int i = 0; i < header.customBlockCount; i++)
                 {
                     long customBlockPosition = GetCustomBlockPosition(header, i);
                     var block = reader.Read<CustomDataBlock>(customBlockPosition);
 
-                    blocks.Add(block);                 
+                    blocks.Add(block);
                 }
 
                 this.customBlockIndex = blocks.ToDictionary(b => new string(b.Name).Trim());
             }
-            catch(Exception)
+            catch (Exception)
             {
-                this.Dispose();               
-                
+                this.Dispose();
+
                 throw;
             }
         }
@@ -149,12 +152,10 @@ namespace ReadOnlyDictionary.Storage
                 long index;
                 if (this.index.TryGetValue(key, out index))
                 {
-
                     var serializedSize = this.reader.ReadInt32(index);
                     byte[] serialized = this.reader.ReadArray(index + sizeof(Int32), serializedSize);
                     value = serializer.Deserialize(serialized);
                     return true;
-
                 }
                 else
                 {
@@ -289,25 +290,25 @@ namespace ReadOnlyDictionary.Storage
             var c = additionalBlocks.Select(a => new
             {
                 Name = a.Key,
-                Bytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value))
+                Bytes = GetJsonBytes(a)
             }).ToArray();
 
-            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();        
+            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();
 
             // Resize down to include custom blocks
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
 
             var customDataPosition = header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock);
-            
+
             for (int i = 0; i < c.Length; i++)
-            {                
-                blocks[i].Position = customDataPosition;                
-                this.reader.WriteArray(blocks[i].Position, c[i].Bytes);                
-                this.reader.Write(GetCustomBlockPosition(header, i), ref blocks[i]);                
+            {
+                blocks[i].Position = customDataPosition;
+                this.reader.WriteArray(blocks[i].Position, c[i].Bytes);
+                this.reader.Write(GetCustomBlockPosition(header, i), ref blocks[i]);
 
                 customDataPosition += c[i].Bytes.Length;
             }
-       
+
             // store header in file
             header.customBlockCount = blocks.Length;
             header.Count = count;
@@ -317,10 +318,22 @@ namespace ReadOnlyDictionary.Storage
             reader.Flush();
         }
 
+        private static byte[] GetJsonBytes(KeyValuePair<string, object> a)
+        {
+            try
+            {
+                return Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value));
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Error serializing metadata: {a.Key}", e);
+            }
+        }
+
         private unsafe CustomDataBlock ToCustomDataBlock(string name, byte[] customContentBytes)
-        {            
+        {
             var result = new CustomDataBlock();
-            
+
             result.Length = customContentBytes.Length;
 
             for (int i = 0; i < name.Length; i++)
