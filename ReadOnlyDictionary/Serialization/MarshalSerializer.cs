@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace ReadOnlyDictionary.Serialization
+namespace ReadonlyDictionary.Serialization
 {
     // http://stackoverflow.com/questions/3278827/how-to-convert-a-structure-to-a-byte-array-in-c
     public class MarshalSerializer<T> : ISerializer<T> where T: struct

@@ -2,15 +2,16 @@
 using ReadonlyDictionary.Format;
 using ReadonlyDictionary.Index;
 using ReadonlyDictionary.Storage.Stores;
-using ReadOnlyDictionary.Serialization;
+using ReadonlyDictionary.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Newtonsoft.Json;
 
-namespace ReadOnlyDictionary.Storage
+namespace ReadonlyDictionary.Storage
 {
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
@@ -29,7 +30,8 @@ namespace ReadOnlyDictionary.Storage
             long count,
             IRandomAccessStore reader,
             IIndexSerializer<TKey> indexSerializer = null,
-            IEnumerable<KeyValuePair<string, object>> additionalData = null)
+            IEnumerable<KeyValuePair<string, object>> additionalData = null,
+            JsonSerializerSettings additionalDataSerializerSettings = null)
         {
             this.serializer = serializer;
             indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
@@ -37,7 +39,7 @@ namespace ReadOnlyDictionary.Storage
 
             try
             {
-                WriteData(values, serializer, indexSerializer, count, fi, additionalData);
+                WriteData(values, serializer, indexSerializer, count, fi, additionalData, additionalDataSerializerSettings);
             }
             catch (Exception)
             {
@@ -74,37 +76,15 @@ namespace ReadOnlyDictionary.Storage
                     throw new InvalidMagicException(fi.FullName);
                 }
 
-                switch (header.SerializationStrategy)
-                {
-                    case Header.SerializationStrategyEnum.Json:
-                        this.serializer = new JsonSerializer<TValue>();
-                        break;
-
-                    case Header.SerializationStrategyEnum.Protobuf:
-                        this.serializer = new ProtobufSerializer<TValue>();
-                        break;
-
-                    case Header.SerializationStrategyEnum.JsonFlyWeight:
-                        var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
-                        var stateJson = Encoding.ASCII.GetString(stateBytes);
-                        var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
-                        this.serializer = new JsonFlyweightSerializer<TValue>(state);
-                        break;
-
-                    case Header.SerializationStrategyEnum.Custom:
                         if (serializer == null)
                         {
-                            throw new ArgumentException("Readonlydictionary users custom serializer which was not supplied");
+                    this.serializer = this.ReadSerializerFromHeader(header);
                         }
                         else
                         {
-                            this.serializer = serializer;
+                    this.serializer = serializer;
                         }
-                        break;
 
-                    default:
-                        throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
-                }
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
@@ -127,6 +107,26 @@ namespace ReadOnlyDictionary.Storage
                 this.Dispose();
 
                 throw;
+            }
+        }
+
+        private ISerializer<TValue> ReadSerializerFromHeader(Header header)
+        {
+            switch (header.SerializationStrategy)
+            {
+                case Header.SerializationStrategyEnum.Json:
+                    return new JsonSerializer<TValue>();                    
+                case Header.SerializationStrategyEnum.Protobuf:
+                    return new ProtobufSerializer<TValue>();
+                case Header.SerializationStrategyEnum.JsonFlyWeight:
+                    var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
+                    var stateJson = Encoding.ASCII.GetString(stateBytes);
+                    var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
+                    return new JsonFlyweightSerializer<TValue>(state);
+                case Header.SerializationStrategyEnum.Custom:                    
+                    throw new ArgumentException("Readonlydictionary uses custom serializer which was not supplied");                    
+                default:
+                    throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
             }
         }
 
@@ -184,7 +184,7 @@ namespace ReadOnlyDictionary.Storage
             }
         }
 
-        public T2 GetAdditionalData<T2>(string name)
+        public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
         {
             lock (mutex)
             {
@@ -197,7 +197,7 @@ namespace ReadOnlyDictionary.Storage
 
                 var blockBytes = reader.ReadArray(block.Position, block.Length);
                 var blockJson = Encoding.ASCII.GetString(blockBytes);
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<T2>(blockJson);
+                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
             }
         }
 
@@ -224,7 +224,8 @@ namespace ReadOnlyDictionary.Storage
             IIndexSerializer<TKey> indexSerializer,
             long count,
             FileInfo filename,
-            IEnumerable<KeyValuePair<string, object>> additionalBlocks)
+            IEnumerable<KeyValuePair<string, object>> additionalBlocks,
+            JsonSerializerSettings additionalDataSerializerSettings)
         {
             additionalBlocks = additionalBlocks ?? new KeyValuePair<string, object>[] { };
             var header = new Header();

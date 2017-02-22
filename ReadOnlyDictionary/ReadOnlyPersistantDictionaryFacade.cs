@@ -4,7 +4,7 @@
 //using System.Text;
 //using System.Threading.Tasks;
 
-//namespace ReadOnlyDictionary
+//namespace ReadonlyDictionary
 //{
 //    public class ReadOnlyPersistantDictionaryFacade<TValue> : IDictionary<Guid, TValue>
 //    {

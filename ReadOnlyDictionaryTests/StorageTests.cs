@@ -2,15 +2,15 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
-using ReadOnlyDictionaryTests.SampleData;
-using ReadOnlyDictionary.Serialization;
-using ReadOnlyDictionary.Storage;
+using ReadonlyDictionaryTests.SampleData;
+using ReadonlyDictionary.Serialization;
+using ReadonlyDictionary.Storage;
 using System.IO;
 using System.Diagnostics;
 
-using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadOnlyDictionaryTests.SampleData.Book>;
+using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
 
-namespace ReadOnlyDictionaryTests
+namespace ReadonlyDictionaryTests
 {
     public abstract class TestBase
     {

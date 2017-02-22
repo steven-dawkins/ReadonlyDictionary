@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReadOnlyDictionaryTests.SampleData
+namespace ReadonlyDictionaryTests.SampleData
 {
     public class RandomDataGenerator
     {
