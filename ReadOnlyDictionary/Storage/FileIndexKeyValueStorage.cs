@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Newtonsoft.Json;
+using System.IO.Compression;
 
 namespace ReadonlyDictionary.Storage
 {
@@ -196,10 +197,9 @@ namespace ReadonlyDictionary.Storage
                 var block = this.customBlockIndex[name];
 
                 var blockBytes = reader.ReadArray(block.Position, block.Length);
-                var blockJson = Encoding.ASCII.GetString(blockBytes);
-                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
+                return GetMetadataObjectFromBytes<T2>(settings, blockBytes);
             }
-        }
+        }        
 
         public IEnumerable<string> GetAdditionalDataKeys()
         {
@@ -291,7 +291,7 @@ namespace ReadonlyDictionary.Storage
             var c = additionalBlocks.Select(a => new
             {
                 Name = a.Key,
-                Bytes = GetJsonBytes(a)
+                Bytes = GetMetadataBytes(a)
             }).ToArray();
 
             var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();
@@ -319,15 +319,66 @@ namespace ReadonlyDictionary.Storage
             reader.Flush();
         }
 
-        private static byte[] GetJsonBytes(KeyValuePair<string, object> a)
+        private static byte[] GetMetadataBytes(KeyValuePair<string, object> a)
         {
             try
             {
-                return Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value));
+                //return Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value));
+                return ZipStr(JsonConvert.SerializeObject(a.Value));
             }
             catch (Exception e)
             {
                 throw new Exception($"Error serializing metadata: {a.Key}", e);
+            }
+        }
+        private static byte[] ZipStr(string str)
+        {
+            using (MemoryStream output = new MemoryStream())
+            {
+                using (DeflateStream gzip =
+                  new DeflateStream(output, CompressionLevel.Optimal))
+                {
+                    using (StreamWriter writer =
+                      new StreamWriter(gzip, System.Text.Encoding.UTF8))
+                    {
+                        writer.Write(str);
+                        writer.Flush();
+                    }
+                    output.Flush();                    
+                }
+
+                return output.ToArray();
+            }
+        }
+
+        private static string UnZip(byte[] bytes)
+        {
+            using (MemoryStream input = new MemoryStream(bytes, false))
+            {
+                using (DeflateStream gzip =
+                  new DeflateStream(input, CompressionMode.Decompress))
+                {
+                    using (StreamReader reader =
+                      new StreamReader(gzip, System.Text.Encoding.UTF8))
+                    {
+                        input.Flush();
+                        return reader.ReadToEnd();
+                    }                    
+                }
+            }
+        }
+
+        private static T2 GetMetadataObjectFromBytes<T2>(JsonSerializerSettings settings, byte[] blockBytes)
+        {           
+            try
+            {
+                var blockJson = UnZip(blockBytes);
+                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
+            }
+            catch(Exception e)
+            {
+                var blockJson = Encoding.ASCII.GetString(blockBytes);
+                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
             }
         }
 
