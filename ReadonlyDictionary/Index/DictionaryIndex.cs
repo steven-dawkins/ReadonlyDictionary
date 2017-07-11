@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -38,7 +39,36 @@ namespace ReadonlyDictionary.Index
         public DictionaryIndex(byte[] bytes)
         {
             var indexJson = Encoding.UTF8.GetString(bytes);
-            this.dictionary = JsonConvert.DeserializeObject<Dictionary<T, long>>(indexJson);
+            if (typeof(T) == typeof(string))
+            {
+                this.dictionary = (Dictionary<T, long>)(object)this.FastDeserialize(indexJson);
+            }
+            else
+            {
+                this.dictionary = JsonConvert.DeserializeObject<Dictionary<T, long>>(indexJson);
+            }
+        }
+
+        private Dictionary<string, long> FastDeserialize(string json)
+        {
+            var weight = 0.0308686625;
+
+            var result = new Dictionary<string, long>((int)(json.Length * weight));
+            var reader = new JsonTextReader(new StringReader(json));
+            string key = null;
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.PropertyName)
+                {
+                    key = reader.Value.ToString();
+                }
+
+                if (reader.TokenType == JsonToken.Integer)
+                {
+                    result.Add(key, (long)reader.Value);
+                }
+            }
+            return result;
         }
 
         public byte[] Serialize()
