@@ -56,12 +56,6 @@ namespace ReadonlyDictionary.REPL
 
                             return CreateFileIndexKeyValueStorage(randomData, serializer, "temp2.raw");
                         }
-                    case Mode.FileIndexKeyValueStorageNetSerializer:
-                        {
-                            var serializer = new NetSerializer<Book>();
-
-                            return CreateFileIndexKeyValueStorage(randomData, serializer, "temp3.raw");
-                        }
                     case Mode.FileIndexKeyValueStorageMarshal:
                         {
                             var serializer = new MarshalSerializer<Book>();
