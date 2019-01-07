@@ -1,14 +1,21 @@
-version: 1.0.{build}
-image: Visual Studio 2015
+version: 1.1.{build}
+image: Visual Studio 2017
 configuration: Release
+environment:
+  COVERALLS_REPO_TOKEN:
+    secure: fi6bOacZqdXXRAE679Iu7mXAvdr8owltFkXYajL6TonDcYhL6mXitW2gyMkW8UDf
 nuget:
   project_feed: true
-install:  
-  choco install SourceLink
-before_package:
-  - dir "C:\projects\readonlydictionary\ReadOnlyDictionary\bin\Release\"
-  - ps: sourcelink index -pr ./ReadOnlyDictionary/ReadOnlyDictionary.csproj -pp Configuration Release -u 'https://raw.githubusercontent.com/steven-dawkins/readonlydictionary/{0}/%var2%'
-  
+before_build:
+- cmd: nuget restore
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+  file_version: '{version}'
+  informational_version: '{version}'
 build:
   publish_nuget: true
   publish_nuget_symbols: false
