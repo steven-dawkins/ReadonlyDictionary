@@ -186,20 +186,35 @@ namespace ReadonlyDictionary.Storage
         }
 
         public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
+        {            
+            var json = GetAdditionalDataJson(name);
+
+            if (json == null)
+            {
+                return default(T2);
+            }
+
+            return JsonConvert.DeserializeObject<T2>(json, settings ?? new JsonSerializerSettings());
+        }
+
+        public string GetAdditionalDataJson(string name)
         {
             lock (mutex)
             {
                 if (!this.customBlockIndex.ContainsKey(name))
                 {
-                    return default(T2);
+                    return null;
                 }
 
                 var block = this.customBlockIndex[name];
 
                 var blockBytes = reader.ReadArray(block.Position, block.Length);
-                return GetMetadataObjectFromBytes<T2>(settings, blockBytes);
+
+                var blockJson = BytesToJson(blockBytes);
+
+                return blockJson;
             }
-        }        
+        }
 
         public IEnumerable<string> GetAdditionalDataKeys()
         {
@@ -351,6 +366,20 @@ namespace ReadonlyDictionary.Storage
             }
         }
 
+        private static string BytesToJson(byte[] blockBytes)
+        {
+            try
+            {
+                var blockJson = UnZip(blockBytes);
+                return blockJson;
+            }
+            catch (Exception)
+            {
+                var blockJson = Encoding.ASCII.GetString(blockBytes);
+                return blockJson;
+            }
+        }
+
         private static string UnZip(byte[] bytes)
         {
             using (MemoryStream input = new MemoryStream(bytes, false))
@@ -365,20 +394,6 @@ namespace ReadonlyDictionary.Storage
                         return reader.ReadToEnd();
                     }                    
                 }
-            }
-        }
-
-        private static T2 GetMetadataObjectFromBytes<T2>(JsonSerializerSettings settings, byte[] blockBytes)
-        {           
-            try
-            {
-                var blockJson = UnZip(blockBytes);
-                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
-            }
-            catch(Exception e)
-            {
-                var blockJson = Encoding.ASCII.GetString(blockBytes);
-                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
             }
         }
 
