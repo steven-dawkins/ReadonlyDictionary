@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.106
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadonlyDictionary", "ReadOnlyDictionary\ReadonlyDictionary.csproj", "{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReadonlyDictionary", "ReadOnlyDictionary\ReadonlyDictionary.csproj", "{2C221F92-7AE8-43CD-9783-6D8431D0A1DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadonlyDictionaryTests", "ReadOnlyDictionaryTests\ReadonlyDictionaryTests.csproj", "{48A52ACC-99DE-461B-A299-FFF1B53D28BF}"
 EndProject
@@ -37,5 +37,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {457F4449-0940-406B-9202-0E780490F4BC}
 	EndGlobalSection
 EndGlobal
