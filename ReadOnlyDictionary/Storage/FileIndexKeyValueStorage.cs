@@ -186,8 +186,20 @@ namespace ReadonlyDictionary.Storage
         }
 
         public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
-        {            
-            var json = GetAdditionalDataJson(name);
+        {
+            try
+            {
+                return UnzipAndDeserialize<T2>(name, settings, true);
+            }
+            catch (Exception)
+            {
+                return UnzipAndDeserialize<T2>(name, settings, false);
+            }
+        }
+
+        private T2 UnzipAndDeserialize<T2>(string name, JsonSerializerSettings settings, bool unzip)
+        {
+            var json = GetAdditionalDataJson(name, unzip);
 
             if (json == null)
             {
@@ -197,7 +209,7 @@ namespace ReadonlyDictionary.Storage
             return JsonConvert.DeserializeObject<T2>(json, settings ?? new JsonSerializerSettings());
         }
 
-        public string GetAdditionalDataJson(string name)
+        public string GetAdditionalDataJson(string name, bool unzip)
         {
             lock (mutex)
             {
@@ -210,7 +222,7 @@ namespace ReadonlyDictionary.Storage
 
                 var blockBytes = reader.ReadArray(block.Position, block.Length);
 
-                var blockJson = BytesToJson(blockBytes);
+                var blockJson = BytesToJson(blockBytes, unzip);
 
                 return blockJson;
             }
@@ -366,14 +378,14 @@ namespace ReadonlyDictionary.Storage
             }
         }
 
-        private static string BytesToJson(byte[] blockBytes)
+        private static string BytesToJson(byte[] blockBytes, bool unzip)
         {
-            try
+            if (unzip)
             {
                 var blockJson = UnZip(blockBytes);
                 return blockJson;
             }
-            catch (Exception)
+            else
             {
                 var blockJson = Encoding.ASCII.GetString(blockBytes);
                 return blockJson;
