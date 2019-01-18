@@ -1,0 +1,9 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" /> 
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Copy.PdbFiles" Version="2.8.3" PrivateAssets="All" /> 
+  </ItemGroup>
+</Project>
