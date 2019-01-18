@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using System.IO.MemoryMappedFiles;
-
-namespace ReadonlyDictionary.Storage.Stores
+﻿namespace ReadonlyDictionary.Storage.Stores
 {
+    using System;
+    using System.IO;
+    using System.IO.MemoryMappedFiles;
+
     public class MemoryMappedStore : IRandomAccessStore
     {
         private MemoryMappedFile mmf;
@@ -33,6 +33,7 @@ namespace ReadonlyDictionary.Storage.Stores
                 this.accessor.Flush();
                 this.accessor.Dispose();
             }
+
             if (this.mmf != null)
             {
                 this.mmf.Dispose();
@@ -123,6 +124,7 @@ namespace ReadonlyDictionary.Storage.Stores
                 {
                     // todo: log deleteException
                 }
+
                 throw;
             }
 

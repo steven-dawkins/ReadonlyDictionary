@@ -1,15 +1,15 @@
-﻿using ReadonlyDictionary.Exceptions;
-using ReadonlyDictionary.Index;
-using ReadonlyDictionary.Storage.Stores;
-using ReadonlyDictionary.Serialization;
-using ReadonlyDictionary.Storage;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using Newtonsoft.Json;
+    using ReadonlyDictionary.Exceptions;
+    using ReadonlyDictionary.Index;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage;
+    using ReadonlyDictionary.Storage.Stores;
+
     public class FileIndexKeyValueStorageBuilder<TKey, TValue>
     {
         public enum AccessStrategy { Streams, MemoryMapped }
@@ -60,6 +60,7 @@ namespace ReadonlyDictionary.Storage
                 default:
                     throw new Exception("Unexpected access strategy: " + strategy);
             }
+
             return reader;
         }
 
@@ -77,6 +78,7 @@ namespace ReadonlyDictionary.Storage
                 default:
                     throw new Exception("Unexpected access strategy: " + strategy);
             }
+
             return reader;
         }
 

@@ -5,19 +5,19 @@
  * < it under the terms of the GNU General Public License as published by
  * < the Free Software Foundation, either version 3 of the License, or
  * < (at your option) any later version.
- * < 
+ * <
  * < This program is distributed in the hope that it will be useful,
  * < but WITHOUT ANY WARRANTY; without even the implied warranty of
  * < MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * < GNU General Public License for more details.
- * < 
+ * <
  * < You should have received a copy of the GNU General Public License
  * < along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * ........................................................................ */
-using System;
-
 namespace MPHTest.MPH
 {
+    using System;
+
     [Serializable]
     internal class CompressedSeq
     {
@@ -38,13 +38,14 @@ namespace MPHTest.MPH
                 x >>= 1;
                 res++;
             }
+
             return res;
         }
 
         public void Generate(uint[] valsTable, uint n)
         {
             uint i;
-            // lengths: represents lengths of encoded values	
+            // lengths: represents lengths of encoded values
             var lengths = new uint[n];
 
             _n = n;
@@ -117,6 +118,7 @@ namespace MPHTest.MPH
                 encIdx += BitBool.GetBitsValue(_lengthRems, idx - 1, _remR, remsMask);
                 selRes = _sel.NextQuery(selRes);
             }
+
             var encLength = (selRes - idx) << (int)_remR;
             encLength += BitBool.GetBitsValue(_lengthRems, idx, _remR, remsMask);
             encLength -= encIdx;
@@ -124,6 +126,7 @@ namespace MPHTest.MPH
             {
                 return 0;
             }
+
             return (BitBool.GetBitsAtPos(_storeTable, encIdx, encLength) + ((uint)((1 << (int)encLength) - 1)));
         }
     }

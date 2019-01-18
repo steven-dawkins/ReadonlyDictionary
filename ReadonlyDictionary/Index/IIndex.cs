@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace ReadonlyDictionary.Index
+﻿namespace ReadonlyDictionary.Index
 {
+    using System.Collections.Generic;
+
     public interface IIndexSerializer<T>
     {
         IIndex<T> Deserialize(byte[] bytes);

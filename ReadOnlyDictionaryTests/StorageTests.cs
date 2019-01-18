@@ -1,17 +1,16 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
-using System.Linq;
-using ReadonlyDictionaryTests.SampleData;
-using ReadonlyDictionary.Serialization;
-using ReadonlyDictionary.Storage;
-using System.IO;
-using System.Diagnostics;
-
-using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
-
-namespace ReadonlyDictionaryTests
+﻿namespace ReadonlyDictionaryTests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage;
+    using ReadonlyDictionaryTests.SampleData;
+    using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
+
     public abstract class TestBase
     {
         [TestInitialize]
@@ -115,7 +114,7 @@ namespace ReadonlyDictionaryTests
     public class FileIndexKeyValueStorageJsonFlyweight : FileIndexKeyValueStorageBase
     {
         public override void StorageInitalize()
-        {            
+        {
             var serializer = new JsonFlyweightSerializer<Book>();
 
             WriteStorage(serializer);
@@ -133,13 +132,13 @@ namespace ReadonlyDictionaryTests
             {
 
             }
-            
-            using (var reader = BookStorage.Open("temp2.raw", strategy, null))            
+
+            using (var reader = BookStorage.Open("temp2.raw", strategy, null))
             {
                 for (int i = 0; i < data.Length; i++)
                 {
                     var item = data[i];
-                    Assert.AreEqual(item.Value, reader.Get(item.Key));                    
+                    Assert.AreEqual(item.Value, reader.Get(item.Key));
                 }
             }
         }
@@ -164,7 +163,7 @@ namespace ReadonlyDictionaryTests
         public override void StorageInitalize()
         {
             WriteStorage(serializer, BookStorage.AccessStrategy.Streams);
-        }        
+        }
 
         [TestMethod]
         public void TestMetadata()
@@ -186,7 +185,7 @@ namespace ReadonlyDictionaryTests
             {
                 Assert.AreEqual(additionalMetadata[0].Value, temp.GetAdditionalData<string>(additionalMetadata[0].Key));
                 Assert.AreEqual(additionalMetadata[1].Value, temp.GetAdditionalData<Book>(additionalMetadata[1].Key));
-            }            
+            }
         }
     }
 }

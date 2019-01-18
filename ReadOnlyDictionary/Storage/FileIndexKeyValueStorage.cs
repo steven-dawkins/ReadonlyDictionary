@@ -1,19 +1,19 @@
-﻿using ReadonlyDictionary.Exceptions;
-using ReadonlyDictionary.Format;
-using ReadonlyDictionary.Index;
-using ReadonlyDictionary.Storage.Stores;
-using ReadonlyDictionary.Serialization;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using Newtonsoft.Json;
-using System.IO.Compression;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using Newtonsoft.Json;
+    using ReadonlyDictionary.Exceptions;
+    using ReadonlyDictionary.Format;
+    using ReadonlyDictionary.Index;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage.Stores;
+
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
         private readonly ISerializer<TValue> serializer;
@@ -72,12 +72,13 @@ namespace ReadonlyDictionary.Storage
                 {
                     throw new NoMagicException(fi.FullName);
                 }
+
                 if (header.magic != Header.expectedMagic)
                 {
                     throw new InvalidMagicException(fi.FullName);
                 }
 
-                        if (serializer == null)
+                if (serializer == null)
                         {
                     this.serializer = this.ReadSerializerFromHeader(header);
                         }
@@ -116,7 +117,7 @@ namespace ReadonlyDictionary.Storage
             switch (header.SerializationStrategy)
             {
                 case Header.SerializationStrategyEnum.Json:
-                    return new JsonSerializer<TValue>();                    
+                    return new JsonSerializer<TValue>();
                 case Header.SerializationStrategyEnum.Protobuf:
                     return new ProtobufSerializer<TValue>();
                 case Header.SerializationStrategyEnum.JsonFlyWeight:
@@ -124,8 +125,8 @@ namespace ReadonlyDictionary.Storage
                     var stateJson = Encoding.ASCII.GetString(stateBytes);
                     var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
                     return new JsonFlyweightSerializer<TValue>(state);
-                case Header.SerializationStrategyEnum.Custom:                    
-                    throw new ArgumentException("Readonlydictionary uses custom serializer which was not supplied");                    
+                case Header.SerializationStrategyEnum.Custom:
+                    throw new ArgumentException("Readonlydictionary uses custom serializer which was not supplied");
                 default:
                     throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
             }
@@ -358,6 +359,7 @@ namespace ReadonlyDictionary.Storage
                 throw new Exception($"Error serializing metadata: {a.Key}", e);
             }
         }
+
         private static byte[] ZipStr(string str)
         {
             using (MemoryStream output = new MemoryStream())
@@ -371,7 +373,8 @@ namespace ReadonlyDictionary.Storage
                         writer.Write(str);
                         writer.Flush();
                     }
-                    output.Flush();                    
+
+                    output.Flush();
                 }
 
                 return output.ToArray();
@@ -404,7 +407,7 @@ namespace ReadonlyDictionary.Storage
                     {
                         input.Flush();
                         return reader.ReadToEnd();
-                    }                    
+                    }
                 }
             }
         }

@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using System.Runtime.InteropServices;
-
-namespace ReadonlyDictionary.Storage.Stores
+﻿namespace ReadonlyDictionary.Storage.Stores
 {
+    using System;
+    using System.IO;
+    using System.Runtime.InteropServices;
+
     public class StreamStore : IRandomAccessStore
     {
         private FileStream stream;

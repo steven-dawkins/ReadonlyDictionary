@@ -5,19 +5,19 @@
  * < it under the terms of the GNU General Public License as published by
  * < the Free Software Foundation, either version 3 of the License, or
  * < (at your option) any later version.
- * < 
+ * <
  * < This program is distributed in the hope that it will be useful,
  * < but WITHOUT ANY WARRANTY; without even the implied warranty of
  * < MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * < GNU General Public License for more details.
- * < 
+ * <
  * < You should have received a copy of the GNU General Public License
  * < along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * ........................................................................ */
-using System;
-
 namespace MPHTest.MPH
 {
+    using System;
+
     [Serializable]
     internal class Select
     {
@@ -38,8 +38,8 @@ namespace MPHTest.MPH
                                                                ,  2 , 3 , 3 , 4 , 3 , 4 , 4 , 5 , 3 , 4 , 4 , 5 , 4 , 5 , 5 , 6
                                                                ,  3 , 4 , 4 , 5 , 4 , 5 , 5 , 6 , 4 , 5 , 5 , 6 , 5 , 6 , 6 , 7
                                                                ,  3 , 4 , 4 , 5 , 4 , 5 , 5 , 6 , 4 , 5 , 5 , 6 , 5 , 6 , 6 , 7
-                                                               ,  4 , 5 , 5 , 6 , 5 , 6 , 6 , 7 , 5 , 6 , 6 , 7 , 6 , 7 , 7 , 8 
-                                                           };
+                                                               ,  4 , 5 , 5 , 6 , 5 , 6 , 6 , 7 , 5 , 6 , 6 , 7 , 6 , 7 , 7 , 8
+};
 
         static readonly byte[,] SelectLookupTable = new byte[256, 8] {
                                                                          { 255 , 255 , 255 , 255 , 255 , 255 , 255 , 255 } , { 0 , 255 , 255 , 255 , 255 , 255 , 255 , 255 } ,
@@ -227,11 +227,13 @@ namespace MPHTest.MPH
                     i++;
                 }
             }
+
             if ((idx & 0x1f) != 0)
             {
                 buffer = buffer >> 0x20 - (idx & 0x1f);
                 _bitsVec[(idx - 1) >> 5] = buffer;
             }
+
             GenerateSelTable();
         }
 

@@ -1,8 +1,7 @@
-﻿using Newtonsoft.Json;
-using System.Text;
-
-namespace ReadonlyDictionary.Serialization
+﻿namespace ReadonlyDictionary.Serialization
 {
+    using System.Text;
+    using Newtonsoft.Json;
 
     public class JsonSerializer<T> : ISerializer<T>
     {
@@ -29,5 +28,5 @@ namespace ReadonlyDictionary.Serialization
         }
     }
 
-    
+
 }

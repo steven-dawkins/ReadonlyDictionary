@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MPHTest.MPH;
-using System.IO.MemoryMappedFiles;
-using System.IO;
-using ReadonlyDictionary.Serialization;
-using ReadonlyDictionary.Storage;
-
-namespace ReadonlyDictionary {        
+﻿namespace ReadonlyDictionary {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.IO.MemoryMappedFiles;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using MPHTest.MPH;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage;
 
     //public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
     //{

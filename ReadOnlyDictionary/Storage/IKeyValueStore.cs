@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+
     public interface IKeyValueStore<TKey, TValue> : IDisposable
     {
         bool ContainsKey(TKey key);

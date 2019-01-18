@@ -1,8 +1,8 @@
-﻿using System;
-using System.Runtime.InteropServices;
-
-namespace ReadonlyDictionary.Format
+﻿namespace ReadonlyDictionary.Format
 {
+    using System;
+    using System.Runtime.InteropServices;
+
     internal struct Header
     {
         public enum SerializationStrategyEnum { Custom = 0, Json, Protobuf, JsonFlyWeight };
@@ -36,7 +36,7 @@ namespace ReadonlyDictionary.Format
         public fixed char Name[256];
 
         public override string ToString()
-        {            
+        {
             return $"{Position} - {Length}";
         }
     }

@@ -5,19 +5,19 @@
  * < it under the terms of the GNU General Public License as published by
  * < the Free Software Foundation, either version 3 of the License, or
  * < (at your option) any later version.
- * < 
+ * <
  * < This program is distributed in the hope that it will be useful,
  * < but WITHOUT ANY WARRANTY; without even the implied warranty of
  * < MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * < GNU General Public License for more details.
- * < 
+ * <
  * < You should have received a copy of the GNU General Public License
  * < along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * ........................................................................ */
-using System;
-
 namespace MPHTest.MPH
 {
+    using System;
+
     internal struct BucketSortedList
     {
         public uint BucketsList;
@@ -39,7 +39,7 @@ namespace MPHTest.MPH
         {
             public uint ItemsList; // offset
             uint _sizeBucketID;
-			
+
             public uint Size	   { get { return _sizeBucketID; } set { _sizeBucketID = value; } }
             public uint BucketID   { get { return _sizeBucketID; } set { _sizeBucketID = value; } }
         }
@@ -49,7 +49,8 @@ namespace MPHTest.MPH
             public uint F;
             public uint H;
             public uint BucketNum;
-        };
+        }
+;
 
 
         Bucket[]   _buckets;
@@ -63,6 +64,7 @@ namespace MPHTest.MPH
         {
             get { return _nbuckets; }
         }
+
         public uint N
         {
             get { return _n; }
@@ -75,20 +77,20 @@ namespace MPHTest.MPH
             var loadFactor = c;
             _m = keySource.NbKeys;
             _nbuckets = _m/KeysPerBucket + 1;
-	
+
             if(loadFactor < 0.5 )  loadFactor = 0.5;
             if(loadFactor >= 0.99) loadFactor = 0.99;
-        
+
             _n = (uint)(_m/(loadFactor)) + 1;
-	
+
             if(_n % 2 == 0) _n++;
             for(;;)
             {
                 if(MillerRabin.CheckPrimality(_n)) break;
                 _n += 2; // just odd numbers can be primes for n > 2
             }
-            
-            _buckets = new Bucket[_nbuckets]; 
+
+            _buckets = new Bucket[_nbuckets];
             _items   = new Item[_m];
 
         }
@@ -104,8 +106,10 @@ namespace MPHTest.MPH
                 {
                     return false;
                 }
+
                 p++;
             }
+
             _items[p].F = mapItems[itemIdx].F;
             _items[p].H = mapItems[itemIdx].H;
             _buckets[bucketIdx].Size++;
@@ -124,7 +128,7 @@ namespace MPHTest.MPH
             var mapItems = new MapItem[_m];
             uint mappingIterations = 1000;
             var rdm = new Random(111);
-	
+
             maxBucketSize = 0;
             for (; ; )
             {
@@ -151,18 +155,21 @@ namespace MPHTest.MPH
                         maxBucketSize = _buckets[g].Size;
                     }
                 }
+
                 _buckets[0].ItemsList = 0;
                 for (i = 1; i < _nbuckets; i++)
                 {
                     _buckets[i].ItemsList = _buckets[i - 1].ItemsList + _buckets[i - 1].Size;
                     _buckets[i - 1].Size = 0;
                 }
+
                 _buckets[i - 1].Size = 0;
                 for (i = 0; i < _m; i++)
                 {
                     if (!BucketsInsert(mapItems, i))
                         break;
                 }
+
                 if (i == _m)
                 {
                     return true; // SUCCESS
@@ -190,7 +197,7 @@ namespace MPHTest.MPH
                     continue;
                 sortedLists[bucketSize].Size++;
             }
-            
+
             sortedLists[1].BucketsList = 0;
             // Determine final position of list of buckets into the contiguous array that will store all the buckets
             for (i = 2; i <= maxBucketSize; i++)
@@ -198,7 +205,7 @@ namespace MPHTest.MPH
                 sortedLists[i].BucketsList = sortedLists[i - 1].BucketsList + sortedLists[i - 1].Size;
                 sortedLists[i - 1].Size = 0;
             }
-            
+
             sortedLists[i - 1].Size = 0;
             // Store the buckets in a new array which is sorted by bucket sizes
             var outputBuckets = new Bucket[_nbuckets];
@@ -210,19 +217,19 @@ namespace MPHTest.MPH
                 {
                     continue;
                 }
-                
+
                 position = sortedLists[bucketSize].BucketsList + sortedLists[bucketSize].Size;
                 outputBuckets[position].BucketID = i;
                 outputBuckets[position].ItemsList = inputBuckets[i].ItemsList;
                 sortedLists[bucketSize].Size++;
             }
-            
+
             _buckets = outputBuckets;
 
             // Store the items according to the new order of buckets.
             var outputItems = new Item[_n];
             position = 0;
-            
+
             for (bucketSize = 1; bucketSize <= maxBucketSize; bucketSize++)
             {
                 for (i = sortedLists[bucketSize].BucketsList;
@@ -261,9 +268,11 @@ namespace MPHTest.MPH
                 {
                     break;
                 }
+
                 occupTable.SetBit(position);
                 p++;
             }
+
             if(i != size) // Undo the placement
             {
                 p= _buckets[bucketNum].ItemsList;
@@ -273,6 +282,7 @@ namespace MPHTest.MPH
                     {
                         break;
                     }
+
                     position = (uint)((_items[p].F + ((ulong)_items[p].H) * probe0Num + probe1Num) % _n);
                     occupTable.UnSetBit(position);
 
@@ -280,8 +290,10 @@ namespace MPHTest.MPH
                     p++;
                     i--;
                 }
+
                 return false;
-            } 	
+            }
+
             return true;
         }
 
@@ -305,17 +317,19 @@ namespace MPHTest.MPH
                     {
                         // if bucket is successfully placed remove it from list
                         if (PlaceBucketProbe(probe0Num, probe1Num, currBucket, i, occupTable))
-                        {	
+                        {
                             dispTable[_buckets[currBucket].BucketID] = probe0Num + probe1Num * _n;
-                        } 
+                        }
                         else
                         {
                             _buckets[nonPlacedBucket + sortedLists[i].BucketsList].ItemsList = _buckets[currBucket].ItemsList;
                             _buckets[nonPlacedBucket + sortedLists[i].BucketsList].BucketID = _buckets[currBucket].BucketID;
                             nonPlacedBucket++;
                         }
+
                         currBucket++;
                     }
+
                     sortedLists[i].Size = nonPlacedBucket;
                     probe0Num++;
                     if(probe0Num >= _n)
@@ -323,14 +337,17 @@ namespace MPHTest.MPH
                         probe0Num -= _n;
                         probe1Num++;
                     }
+
                     probeNum++;
                     if (probeNum < maxProbes && probe1Num < _n) continue;
                     sortedLists[i].Size = sortedListSize;
                     return false;
                 }
+
                 sortedLists[i].Size = sortedListSize;
             }
-            return true;            
+
+            return true;
         }
     }
 }

@@ -1,12 +1,12 @@
-﻿using MPHTest.MPH;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReadonlyDictionary
+﻿namespace ReadonlyDictionary
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using MPHTest.MPH;
+
     public class MphKeySource<TKey> : IKeySource
     {
         private readonly uint count;

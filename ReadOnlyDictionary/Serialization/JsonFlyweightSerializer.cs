@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-using ProtoBuf;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text;
+﻿namespace ReadonlyDictionary.Serialization
+{
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Reflection;
+    using System.Text;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using Newtonsoft.Json.Serialization;
+    using ProtoBuf;
 
-namespace ReadonlyDictionary.Serialization
-{    
     public class JsonFlyweightSerializer<T> : ISerializer<T>
     {
         private readonly JsonSerializerSettings settings;
@@ -30,23 +30,23 @@ namespace ReadonlyDictionary.Serialization
 
         public JsonFlyweightSerializer(JsonFlyweightSerializerState state)
             : this(
-                  new FlyweightDataContractResolver(state.Contract), 
+                  new FlyweightDataContractResolver(state.Contract),
                   new JsonFlyweightConverter<string>(state.Converter))
         {
         }
 
         private JsonFlyweightSerializer(
-            FlyweightDataContractResolver contract, 
+            FlyweightDataContractResolver contract,
             JsonFlyweightConverter<string> converter)
         {
-            this.converter = converter;            
+            this.converter = converter;
             this.contract = contract;
             this.settings = new JsonSerializerSettings()
             {
                 Converters = new [] { this.converter },
                 ContractResolver = contract
-            };            
-        }        
+            };
+        }
 
         public class JsonFlyweightSerializerState
         {
@@ -54,12 +54,12 @@ namespace ReadonlyDictionary.Serialization
             public readonly JsonFlyweightConverter<string>.JsonFlyweightConverterState Converter;
 
             public JsonFlyweightSerializerState(
-                FlyweightDataContractResolver.FlyweightDataContractResolverState contract, 
+                FlyweightDataContractResolver.FlyweightDataContractResolverState contract,
                 JsonFlyweightConverter<string>.JsonFlyweightConverterState converter)
             {
                 this.Contract = contract;
                 this.Converter = converter;
-            }            
+            }
         }
 
 
@@ -83,7 +83,7 @@ namespace ReadonlyDictionary.Serialization
         {
             var json = Encoding.UTF8.GetString(bytes);
             return JsonConvert.DeserializeObject<T>(json, this.settings);
-        }       
+        }
 
         // borrowed from stackoverflow: http://stackoverflow.com/questions/10966331/two-way-bidirectional-dictionary-in-c/10966684
         public class Map<T1, T2>
@@ -93,7 +93,7 @@ namespace ReadonlyDictionary.Serialization
 
             public Map() : this(new Dictionary<T1, T2>(), new Dictionary<T2, T1>())
             {
-                
+
             }
 
             public Map(MapState state) : this(state.Forward, state.Reverse)
@@ -139,6 +139,7 @@ namespace ReadonlyDictionary.Serialization
                 {
                     this.dictionary = dictionary;
                 }
+
                 public T4 this[T3 index]
                 {
                     get { return dictionary[index]; }
@@ -177,7 +178,7 @@ namespace ReadonlyDictionary.Serialization
 
             public FlyweightDataContractResolver()
                 : this(new Map<string, int>())
-            {                
+            {
             }
 
             public FlyweightDataContractResolver(FlyweightDataContractResolverState state)
@@ -242,8 +243,8 @@ namespace ReadonlyDictionary.Serialization
             public JsonFlyweightConverter()
                 : this(new Map<string, int>())
             {
-                
-            }            
+
+            }
 
             public JsonFlyweightConverter(JsonFlyweightConverterState state)
             {
@@ -272,7 +273,7 @@ namespace ReadonlyDictionary.Serialization
                     dictionary: this.dictionary.Serialize()
                 );
 
-            }            
+            }
 
             protected ConvertType Create(Type objectType, JObject jObject)
             {
@@ -288,8 +289,8 @@ namespace ReadonlyDictionary.Serialization
 
             public override object ReadJson(JsonReader reader,
                                             Type objectType,
-                                             object existingValue,
-                                             JsonSerializer serializer)
+                                            object existingValue,
+                                            JsonSerializer serializer)
             {
                 var index = (long)reader.Value;
 
@@ -310,5 +311,5 @@ namespace ReadonlyDictionary.Serialization
         }
     }
 
-    
+
 }

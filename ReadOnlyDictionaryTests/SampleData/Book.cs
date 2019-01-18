@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
-using ProtoBuf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReadonlyDictionaryTests.SampleData
+﻿namespace ReadonlyDictionaryTests.SampleData
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using Newtonsoft.Json;
+    using ProtoBuf;
+
     [Serializable]
     [ProtoContract]
     public struct Book
