@@ -190,13 +190,13 @@ namespace MPHTest.MPH
         public void Generate(uint[] keysVec, uint n, uint m)
         {
             uint buffer = 0;
-            _n = n;
-            _m = m;
-            var nbits = _n + _m;
+            this._n = n;
+            this._m = m;
+            var nbits = this._n + this._m;
             var vecSize = (nbits + 0x1f) >> 5;
-            var selTableSize = (_n >> 7) + 1;
-            _bitsVec = new uint[vecSize];
-            _selectTable = new uint[selTableSize];
+            var selTableSize = (this._n >> 7) + 1;
+            this._bitsVec = new uint[vecSize];
+            this._selectTable = new uint[selTableSize];
             var j = 0;
             var i = j;
             var idx = i;
@@ -208,13 +208,13 @@ namespace MPHTest.MPH
                     idx++;
 
                     if ((idx & 0x1f) == 0)
-                        _bitsVec[(idx >> 5) - 1] = buffer; // (idx >> 5) = idx/32
+                        this._bitsVec[(idx >> 5) - 1] = buffer; // (idx >> 5) = idx/32
                     j++;
 
-                    if (j == _n) break;
+                    if (j == this._n) break;
                 }
 
-                if (i == _m)
+                if (i == this._m)
                     break;
 
                 while (keysVec[j] > i)
@@ -223,7 +223,7 @@ namespace MPHTest.MPH
                     idx++;
 
                     if ((idx & 0x1f) == 0) // (idx & 0x1f) = idx % 32
-                        _bitsVec[(idx >> 5) - 1] = buffer; // (idx >> 5) = idx/32
+                        this._bitsVec[(idx >> 5) - 1] = buffer; // (idx >> 5) = idx/32
                     i++;
                 }
             }
@@ -231,22 +231,22 @@ namespace MPHTest.MPH
             if ((idx & 0x1f) != 0)
             {
                 buffer = buffer >> 0x20 - (idx & 0x1f);
-                _bitsVec[(idx - 1) >> 5] = buffer;
+                this._bitsVec[(idx - 1) >> 5] = buffer;
             }
 
-            GenerateSelTable();
+            this.GenerateSelTable();
         }
 
         unsafe void GenerateSelTable()
         {
-            fixed (uint* pptrBitsVec = &(_bitsVec[0]))
+            fixed (uint* pptrBitsVec = &(this._bitsVec[0]))
             {
                 var bitsTable = (byte*)pptrBitsVec;
                 uint selTableIdx = 0;
                 uint oneIdx = selTableIdx;
                 uint vecIdx = oneIdx;
                 uint partSum = vecIdx;
-                while (oneIdx < _n)
+                while (oneIdx < this._n)
                 {
                     uint oldPartSum;
                     do
@@ -257,7 +257,7 @@ namespace MPHTest.MPH
                     }
                     while (partSum <= oneIdx);
 
-                    _selectTable[selTableIdx] = SelectLookupTable[bitsTable[vecIdx - 1], oneIdx - oldPartSum] + ((vecIdx - 1) << 3);
+                    this._selectTable[selTableIdx] = SelectLookupTable[bitsTable[vecIdx - 1], oneIdx - oldPartSum] + ((vecIdx - 1) << 3);
                     oneIdx += 0x80;
                     selTableIdx++;
                 }
@@ -267,11 +267,11 @@ namespace MPHTest.MPH
 
         unsafe public uint Query(uint oneIdx)
         {
-            fixed (uint* pptrBitsVec = &(_bitsVec[0]))
+            fixed (uint* pptrBitsVec = &(this._bitsVec[0]))
             {
                 uint oldPartSum;
                 var bitsTable = (byte*)pptrBitsVec;
-                var vecBitIdx = _selectTable[oneIdx >> 7];
+                var vecBitIdx = this._selectTable[oneIdx >> 7];
                 var vecByteIdx = vecBitIdx >> 3;
                 oneIdx &= 0x7f;
                 oneIdx += RankLookupTable[bitsTable[vecByteIdx] & ((1 << (int)(vecBitIdx & 7)) - 1)];
@@ -289,7 +289,7 @@ namespace MPHTest.MPH
 
         unsafe public uint NextQuery(uint vecBitIdx)
         {
-            fixed (uint* pptrBitsVec = &(_bitsVec[0]))
+            fixed (uint* pptrBitsVec = &(this._bitsVec[0]))
             {
                 uint oldPartSum;
                 var bitsTable = (byte*)pptrBitsVec;

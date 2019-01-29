@@ -125,8 +125,8 @@
             public MapState Serialize()
             {
                 return new MapState(
-                    forward: forward,
-                    reverse: reverse
+                    forward: this.forward,
+                    reverse: this.reverse
                 );
             }
 
@@ -142,13 +142,13 @@
 
                 public T4 this[T3 index]
                 {
-                    get { return dictionary[index]; }
-                    set { dictionary[index] = value; }
+                    get { return this.dictionary[index]; }
+                    set { this.dictionary[index] = value; }
                 }
 
                 internal bool ContainsKey(T3 key)
                 {
-                    return dictionary.ContainsKey(key);
+                    return this.dictionary.ContainsKey(key);
                 }
             }
 
@@ -156,14 +156,14 @@
             {
                 get
                 {
-                    return forward.Count;
+                    return this.forward.Count;
                 }
             }
 
             public void Add(T1 t1, T2 t2)
             {
-                forward.Add(t1, t2);
-                reverse.Add(t2, t1);
+                this.forward.Add(t1, t2);
+                this.reverse.Add(t2, t1);
             }
 
             public Indexer<T1, T2> Forward { get; private set; }
@@ -211,12 +211,12 @@
             {
                 var property = base.CreateProperty(member, memberSerialization);
 
-                if (!dictionary.Forward.ContainsKey(property.PropertyName))
+                if (!this.dictionary.Forward.ContainsKey(property.PropertyName))
                 {
-                    dictionary.Add(property.PropertyName, dictionary.Count + 1);
+                    this.dictionary.Add(property.PropertyName, this.dictionary.Count + 1);
                 }
 
-                property.PropertyName = dictionary.Forward[property.PropertyName].ToString();
+                property.PropertyName = this.dictionary.Forward[property.PropertyName].ToString();
 
                 return property;
             }
@@ -227,7 +227,7 @@
 
                 if (int.TryParse(propertyName, out temp))
                 {
-                    return dictionary.Reverse[temp];
+                    return this.dictionary.Reverse[temp];
                 }
                 else
                 {
@@ -301,12 +301,12 @@
                                            object value,
                                            JsonSerializer serializer)
             {
-                if (!dictionary.Forward.ContainsKey((string)value))
+                if (!this.dictionary.Forward.ContainsKey((string)value))
                 {
-                    dictionary.Add((string)value, dictionary.Count + 1);
+                    this.dictionary.Add((string)value, this.dictionary.Count + 1);
                 }
 
-                writer.WriteValue(dictionary.Forward[(string)value]);
+                writer.WriteValue(this.dictionary.Forward[(string)value]);
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿namespace ReadonlyDictionary.Storage.Stores
 {
+    using Polly;
     using System;
     using System.IO;
     using System.IO.MemoryMappedFiles;
@@ -16,14 +17,14 @@
             this.fileInfo = fileInfo;
             this.mmf = MemoryMappedFile.CreateFromFile(fileInfo.FullName, FileMode.CreateNew, fileInfo.Name, initialSize);
 
-            this.accessor = mmf.CreateViewAccessor();
+            this.accessor = this.mmf.CreateViewAccessor();
         }
 
         public MemoryMappedStore(FileInfo fileInfo)
         {
             this.fileInfo = fileInfo;
             this.mmf = MemoryMappedFile.CreateFromFile(fileInfo.FullName, FileMode.Open);
-            this.accessor = mmf.CreateViewAccessor();
+            this.accessor = this.mmf.CreateViewAccessor();
         }
 
         public void Dispose()
@@ -46,14 +47,14 @@
         public T Read<T>(long position) where T : struct
         {
             T header;
-            accessor.Read<T>(position, out header);
+            this.accessor.Read<T>(position, out header);
             return header;
         }
 
         public byte[] ReadArray(long position, int length)
         {
             byte[] bytes = new byte[length];
-            accessor.ReadArray(position, bytes, 0, length);
+            this.accessor.ReadArray(position, bytes, 0, length);
             return bytes;
         }
 
@@ -61,35 +62,35 @@
         {
             get
             {
-                return accessor.Capacity;
+                return this.accessor.Capacity;
             }
         }
 
         public void WriteArray(long position, byte[] bytes)
         {
-            accessor.WriteArray(position, bytes, 0, bytes.Length);
+            this.accessor.WriteArray(position, bytes, 0, bytes.Length);
         }
 
         public void Write<T>(long position, ref T data) where T : struct
         {
-            accessor.Write(position, ref data);
+            this.accessor.Write(position, ref data);
         }
 
         public void Write(long position, int value)
         {
-            accessor.Write(position, value);
+            this.accessor.Write(position, value);
         }
 
         public void Flush()
         {
-            accessor.Flush();
+            this.accessor.Flush();
         }
 
 
 
         public void Resize(long newSize)
         {
-            var fi = new FileInfo(fileInfo.FullName + "_" + newSize);
+            var fi = new FileInfo(this.fileInfo.FullName + "_" + newSize);
 
             if (fi.Exists)
             {
@@ -107,9 +108,9 @@
                     }
 
                     // todo: write in blocks
-                    for (long i = 0; i < Math.Min(accessor.Capacity, newSize); i++)
+                    for (long i = 0; i < Math.Min(this.accessor.Capacity, newSize); i++)
                     {
-                        newAccessor.Write(i, accessor.ReadByte(i));
+                        newAccessor.Write(i, this.accessor.ReadByte(i));
                     }
                 }
             }
@@ -128,12 +129,12 @@
                 throw;
             }
 
-            Dispose();
+            this.Dispose();
 
-            fileInfo.Delete();
-            File.Move(fi.FullName, fileInfo.FullName);
+            this.fileInfo.Delete();
+            File.Move(fi.FullName, this.fileInfo.FullName);
 
-            this.mmf = MemoryMappedFile.CreateFromFile(fileInfo.FullName, FileMode.Open);
+            this.mmf = MemoryMappedFile.CreateFromFile(this.fileInfo.FullName, FileMode.Open);
             this.accessor = this.mmf.CreateViewAccessor();
         }
 

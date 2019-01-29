@@ -26,9 +26,9 @@
 
         public byte[] Read()
         {
-            enumerator.MoveNext();
+            this.enumerator.MoveNext();
 
-            return Encoding.UTF8.GetBytes(string.Format("KEY-{0}", enumerator.Current));
+            return Encoding.UTF8.GetBytes(string.Format("KEY-{0}", this.enumerator.Current));
         }
 
         public void Rewind()

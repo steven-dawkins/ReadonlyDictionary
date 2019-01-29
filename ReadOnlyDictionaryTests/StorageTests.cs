@@ -16,8 +16,8 @@
         [TestInitialize]
         public void TestInitialize()
         {
-            randomData = RandomDataGenerator.RandomData(100000).ToArray();
-            StorageInitalize();
+            this.randomData = RandomDataGenerator.RandomData(100000).ToArray();
+            this.StorageInitalize();
         }
 
         [TestCleanup]
@@ -34,28 +34,28 @@
         [TestMethod]
         public void ExerciseRandomData()
         {
-            Assert.AreEqual((uint)randomData.Length, storage.Count);
+            Assert.AreEqual((uint)this.randomData.Length, this.storage.Count);
 
             var timer = new Stopwatch();
             timer.Start();
 
             // warmup pass
-            for (int i = 0; i < randomData.Length; i++)
+            for (int i = 0; i < this.randomData.Length; i++)
             {
-                var item = randomData[i];
-                Assert.AreEqual(item.Value, storage.Get(item.Key));
-                Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
+                var item = this.randomData[i];
+                Assert.AreEqual(item.Value, this.storage.Get(item.Key));
+                Assert.AreEqual(default(Book), this.storage.Get(Guid.NewGuid()));
             }
 
             Console.WriteLine(this.GetType().Name + " pass1 " + timer.ElapsedMilliseconds + "ms");
 
             timer.Restart();
 
-            for (int i = 0; i < randomData.Length; i++)
+            for (int i = 0; i < this.randomData.Length; i++)
             {
-                var item = randomData[i];
-                Assert.AreEqual(item.Value, storage.Get(item.Key));
-                Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
+                var item = this.randomData[i];
+                Assert.AreEqual(item.Value, this.storage.Get(item.Key));
+                Assert.AreEqual(default(Book), this.storage.Get(Guid.NewGuid()));
             }
 
             Console.WriteLine(this.GetType().Name + "pass2 " + timer.ElapsedMilliseconds + "ms");
@@ -78,7 +78,7 @@
 
         public override void StorageInitalize()
         {
-            storage = new InMemoryKeyValueStorage<Guid, Book>(randomData);
+            this.storage = new InMemoryKeyValueStorage<Guid, Book>(this.randomData);
         }
     }
 
@@ -88,12 +88,12 @@
             ISerializer<Book> serializer,
             BookStorage.AccessStrategy strategy = BookStorage.AccessStrategy.MemoryMapped)
         {
-            using (var temp = BookStorage.Create(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength, strategy))
+            using (var temp = BookStorage.Create(this.randomData, "temp.raw", 1 * 1024 * 1024, serializer, this.randomData.LongLength, strategy))
             {
 
             }
 
-            storage = BookStorage.Open("temp.raw", serializer: serializer);
+            this.storage = BookStorage.Open("temp.raw", serializer: serializer);
         }
 
 
@@ -106,7 +106,7 @@
         {
             var serializer = new JsonSerializer<Book>();
 
-            WriteStorage(serializer);
+            this.WriteStorage(serializer);
         }
     }
 
@@ -117,7 +117,7 @@
         {
             var serializer = new JsonFlyweightSerializer<Book>();
 
-            WriteStorage(serializer);
+            this.WriteStorage(serializer);
         }
 
         [TestMethod]
@@ -151,7 +151,7 @@
         {
             var serializer = new ProtobufSerializer<Book>();
 
-            WriteStorage(serializer);
+            this.WriteStorage(serializer);
         }
     }
 
@@ -162,7 +162,7 @@
 
         public override void StorageInitalize()
         {
-            WriteStorage(serializer, BookStorage.AccessStrategy.Streams);
+            this.WriteStorage(serializer, BookStorage.AccessStrategy.Streams);
         }
 
         [TestMethod]

@@ -40,8 +40,8 @@ namespace MPHTest.MPH
             public uint ItemsList; // offset
             uint _sizeBucketID;
 
-            public uint Size	   { get { return _sizeBucketID; } set { _sizeBucketID = value; } }
-            public uint BucketID   { get { return _sizeBucketID; } set { _sizeBucketID = value; } }
+            public uint Size	   { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
+            public uint BucketID   { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
         }
 
         struct MapItem
@@ -62,47 +62,47 @@ namespace MPHTest.MPH
 
         public uint NBuckets
         {
-            get { return _nbuckets; }
+            get { return this._nbuckets; }
         }
 
         public uint N
         {
-            get { return _n; }
+            get { return this._n; }
         }
 
         public Buckets(IKeySource keySource, double c)
         {
-            _keySource = keySource;
+            this._keySource = keySource;
 
             var loadFactor = c;
-            _m = keySource.NbKeys;
-            _nbuckets = _m/KeysPerBucket + 1;
+            this._m = keySource.NbKeys;
+            this._nbuckets = this._m/KeysPerBucket + 1;
 
             if(loadFactor < 0.5 )  loadFactor = 0.5;
             if(loadFactor >= 0.99) loadFactor = 0.99;
 
-            _n = (uint)(_m/(loadFactor)) + 1;
+            this._n = (uint)(this._m/(loadFactor)) + 1;
 
-            if(_n % 2 == 0) _n++;
+            if(this._n % 2 == 0) this._n++;
             for(;;)
             {
-                if(MillerRabin.CheckPrimality(_n)) break;
-                _n += 2; // just odd numbers can be primes for n > 2
+                if(MillerRabin.CheckPrimality(this._n)) break;
+                this._n += 2; // just odd numbers can be primes for n > 2
             }
 
-            _buckets = new Bucket[_nbuckets];
-            _items   = new Item[_m];
+            this._buckets = new Bucket[this._nbuckets];
+            this._items   = new Item[this._m];
 
         }
 
         bool BucketsInsert(MapItem[] mapItems, uint itemIdx)
         {
             var bucketIdx = mapItems[itemIdx].BucketNum;
-            var p = _buckets[bucketIdx].ItemsList;
+            var p = this._buckets[bucketIdx].ItemsList;
 
-            for (uint i = 0; i < _buckets[bucketIdx].Size; i++)
+            for (uint i = 0; i < this._buckets[bucketIdx].Size; i++)
             {
-                if (_items[p].F == mapItems[itemIdx].F && _items[p].H == mapItems[itemIdx].H)
+                if (this._items[p].F == mapItems[itemIdx].F && this._items[p].H == mapItems[itemIdx].H)
                 {
                     return false;
                 }
@@ -110,22 +110,22 @@ namespace MPHTest.MPH
                 p++;
             }
 
-            _items[p].F = mapItems[itemIdx].F;
-            _items[p].H = mapItems[itemIdx].H;
-            _buckets[bucketIdx].Size++;
+            this._items[p].F = mapItems[itemIdx].F;
+            this._items[p].H = mapItems[itemIdx].H;
+            this._buckets[bucketIdx].Size++;
             return true;
         }
 
         void BucketsClean()
         {
-            for (uint i = 0; i < _nbuckets; i++)
-                _buckets[i].Size = 0;
+            for (uint i = 0; i < this._nbuckets; i++)
+                this._buckets[i].Size = 0;
         }
 
         public bool MappingPhase(out uint hashSeed, out uint maxBucketSize)
         {
             var hl = new uint[3];
-            var mapItems = new MapItem[_m];
+            var mapItems = new MapItem[this._m];
             uint mappingIterations = 1000;
             var rdm = new Random(111);
 
@@ -133,44 +133,44 @@ namespace MPHTest.MPH
             for (; ; )
             {
                 mappingIterations--;
-                hashSeed = (uint)rdm.Next((int)_m); // ((cmph_uint32)rand() % this->_m);
+                hashSeed = (uint)rdm.Next((int)this._m); // ((cmph_uint32)rand() % this->_m);
 
-                BucketsClean();
+                this.BucketsClean();
 
-                _keySource.Rewind();
+                this._keySource.Rewind();
 
                 uint i;
-                for (i = 0; i < _m; i++)
+                for (i = 0; i < this._m; i++)
                 {
-                    JenkinsHash.HashVector(hashSeed, _keySource.Read(), hl);
+                    JenkinsHash.HashVector(hashSeed, this._keySource.Read(), hl);
 
-                    uint g = hl[0] % _nbuckets;
-                    mapItems[i].F = hl[1] % _n;
-                    mapItems[i].H = hl[2] % (_n - 1) + 1;
+                    uint g = hl[0] % this._nbuckets;
+                    mapItems[i].F = hl[1] % this._n;
+                    mapItems[i].H = hl[2] % (this._n - 1) + 1;
                     mapItems[i].BucketNum = g;
 
-                    _buckets[g].Size++;
-                    if (_buckets[g].Size > maxBucketSize)
+                    this._buckets[g].Size++;
+                    if (this._buckets[g].Size > maxBucketSize)
                     {
-                        maxBucketSize = _buckets[g].Size;
+                        maxBucketSize = this._buckets[g].Size;
                     }
                 }
 
-                _buckets[0].ItemsList = 0;
-                for (i = 1; i < _nbuckets; i++)
+                this._buckets[0].ItemsList = 0;
+                for (i = 1; i < this._nbuckets; i++)
                 {
-                    _buckets[i].ItemsList = _buckets[i - 1].ItemsList + _buckets[i - 1].Size;
-                    _buckets[i - 1].Size = 0;
+                    this._buckets[i].ItemsList = this._buckets[i - 1].ItemsList + this._buckets[i - 1].Size;
+                    this._buckets[i - 1].Size = 0;
                 }
 
-                _buckets[i - 1].Size = 0;
-                for (i = 0; i < _m; i++)
+                this._buckets[i - 1].Size = 0;
+                for (i = 0; i < this._m; i++)
                 {
-                    if (!BucketsInsert(mapItems, i))
+                    if (!this.BucketsInsert(mapItems, i))
                         break;
                 }
 
-                if (i == _m)
+                if (i == this._m)
                 {
                     return true; // SUCCESS
                 }
@@ -185,12 +185,12 @@ namespace MPHTest.MPH
         public BucketSortedList[] OrderingPhase(uint maxBucketSize)
         {
             var sortedLists = new BucketSortedList[maxBucketSize + 1];
-            var inputBuckets = _buckets;
-            var inputItems = _items;
+            var inputBuckets = this._buckets;
+            var inputItems = this._items;
             uint i;
             uint bucketSize, position;
 
-            for (i = 0; i < _nbuckets; i++)
+            for (i = 0; i < this._nbuckets; i++)
             {
                 bucketSize = inputBuckets[i].Size;
                 if (bucketSize == 0)
@@ -208,9 +208,9 @@ namespace MPHTest.MPH
 
             sortedLists[i - 1].Size = 0;
             // Store the buckets in a new array which is sorted by bucket sizes
-            var outputBuckets = new Bucket[_nbuckets];
+            var outputBuckets = new Bucket[this._nbuckets];
 
-            for (i = 0; i < _nbuckets; i++)
+            for (i = 0; i < this._nbuckets; i++)
             {
                 bucketSize = inputBuckets[i].Size;
                 if (bucketSize == 0)
@@ -224,10 +224,10 @@ namespace MPHTest.MPH
                 sortedLists[bucketSize].Size++;
             }
 
-            _buckets = outputBuckets;
+            this._buckets = outputBuckets;
 
             // Store the items according to the new order of buckets.
-            var outputItems = new Item[_n];
+            var outputItems = new Item[this._n];
             position = 0;
 
             for (bucketSize = 1; bucketSize <= maxBucketSize; bucketSize++)
@@ -249,7 +249,7 @@ namespace MPHTest.MPH
             }
 
             //Return the items sorted in new order and free the old items sorted in old order
-            _items = outputItems;
+            this._items = outputItems;
             return sortedLists;
         }
 
@@ -258,12 +258,12 @@ namespace MPHTest.MPH
             uint i;
             uint position;
 
-            var p = _buckets[bucketNum].ItemsList;
+            var p = this._buckets[bucketNum].ItemsList;
 
             // try place bucket with probe_num
             for(i = 0; i < size; i++) // placement
             {
-                position = (uint)((_items[p].F + ((ulong)_items[p].H) * probe0Num + probe1Num) % _n);
+                position = (uint)((this._items[p].F + ((ulong)this._items[p].H) * probe0Num + probe1Num) % this._n);
                 if (occupTable.GetBit(position))
                 {
                     break;
@@ -275,7 +275,7 @@ namespace MPHTest.MPH
 
             if(i != size) // Undo the placement
             {
-                p= _buckets[bucketNum].ItemsList;
+                p= this._buckets[bucketNum].ItemsList;
                 for (; ; )
                 {
                     if (i == 0)
@@ -283,7 +283,7 @@ namespace MPHTest.MPH
                         break;
                     }
 
-                    position = (uint)((_items[p].F + ((ulong)_items[p].H) * probe0Num + probe1Num) % _n);
+                    position = (uint)((this._items[p].F + ((ulong)this._items[p].H) * probe0Num + probe1Num) % this._n);
                     occupTable.UnSetBit(position);
 
                     // 				([position/32]^=(1<<(position%32));
@@ -299,9 +299,9 @@ namespace MPHTest.MPH
 
         public bool SearchingPhase(uint maxBucketSize, BucketSortedList[] sortedLists, uint[] dispTable)
         {
-            var maxProbes = (uint)(((Math.Log(_m) / Math.Log(2.0)) / 20) * MaxProbesBase);
+            var maxProbes = (uint)(((Math.Log(this._m) / Math.Log(2.0)) / 20) * MaxProbesBase);
             uint i;
-            var occupTable = new BitArray((int) (((_n + 31) / 32) * sizeof(uint)));
+            var occupTable = new BitArray((int) (((this._n + 31) / 32) * sizeof(uint)));
 
             for(i = maxBucketSize; i > 0; i--)
             {
@@ -316,14 +316,14 @@ namespace MPHTest.MPH
                     for (uint j = 0; j < sortedLists[i].Size; j++)
                     {
                         // if bucket is successfully placed remove it from list
-                        if (PlaceBucketProbe(probe0Num, probe1Num, currBucket, i, occupTable))
+                        if (this.PlaceBucketProbe(probe0Num, probe1Num, currBucket, i, occupTable))
                         {
-                            dispTable[_buckets[currBucket].BucketID] = probe0Num + probe1Num * _n;
+                            dispTable[this._buckets[currBucket].BucketID] = probe0Num + probe1Num * this._n;
                         }
                         else
                         {
-                            _buckets[nonPlacedBucket + sortedLists[i].BucketsList].ItemsList = _buckets[currBucket].ItemsList;
-                            _buckets[nonPlacedBucket + sortedLists[i].BucketsList].BucketID = _buckets[currBucket].BucketID;
+                            this._buckets[nonPlacedBucket + sortedLists[i].BucketsList].ItemsList = this._buckets[currBucket].ItemsList;
+                            this._buckets[nonPlacedBucket + sortedLists[i].BucketsList].BucketID = this._buckets[currBucket].BucketID;
                             nonPlacedBucket++;
                         }
 
@@ -332,14 +332,14 @@ namespace MPHTest.MPH
 
                     sortedLists[i].Size = nonPlacedBucket;
                     probe0Num++;
-                    if(probe0Num >= _n)
+                    if(probe0Num >= this._n)
                     {
-                        probe0Num -= _n;
+                        probe0Num -= this._n;
                         probe1Num++;
                     }
 
                     probeNum++;
-                    if (probeNum < maxProbes && probe1Num < _n) continue;
+                    if (probeNum < maxProbes && probe1Num < this._n) continue;
                     sortedLists[i].Size = sortedListSize;
                     return false;
                 }

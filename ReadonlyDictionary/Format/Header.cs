@@ -37,7 +37,7 @@
 
         public override string ToString()
         {
-            return $"{Position} - {Length}";
+            return $"{this.Position} - {this.Length}";
         }
     }
 

@@ -70,7 +70,7 @@ namespace MPHTest.MPH
         /// <summary>
         /// Maximun value of the hash function.
         /// </summary>
-        public uint N { get { return _n; }}
+        public uint N { get { return this._n; }}
 
         /// <summary>
         /// Compute the hash value associate with the key
@@ -80,15 +80,15 @@ namespace MPHTest.MPH
         public uint Search(byte[] key)
         {
             var hl = new uint[3];
-            JenkinsHash.HashVector(_hashSeed, key, hl);
-            var g = hl[0] % _nbuckets;
-            var f = hl[1] % _n;
-            var h = hl[2] % (_n - 1) + 1;
+            JenkinsHash.HashVector(this._hashSeed, key, hl);
+            var g = hl[0] % this._nbuckets;
+            var f = hl[1] % this._n;
+            var h = hl[2] % (this._n - 1) + 1;
 
-            var disp = _cs.Query(g);
-            var probe0Num = disp % _n;
-            var probe1Num = disp / _n;
-            var position = (uint)((f + ((ulong)h) * probe0Num + probe1Num) % _n);
+            var disp = this._cs.Query(g);
+            var probe0Num = disp % this._n;
+            var probe1Num = disp / this._n;
+            var position = (uint)((f + ((ulong)h) * probe0Num + probe1Num) % this._n);
             return position;
         }
     }

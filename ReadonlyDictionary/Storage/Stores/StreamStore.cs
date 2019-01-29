@@ -23,16 +23,16 @@
         public T Read<T>(long position) where T : struct
         {
             var size = Marshal.SizeOf(typeof(T));
-            var bytes = ReadArray(position, size);
+            var bytes = this.ReadArray(position, size);
             var result = default(T);
-            ByteArrayToStructure(bytes, ref result);
+            this.ByteArrayToStructure(bytes, ref result);
             return result;
         }
 
         public byte[] ReadArray(long position, int length)
         {
             var result = new byte[length];
-            stream.Seek(position, SeekOrigin.Begin);
+            this.stream.Seek(position, SeekOrigin.Begin);
             var readBytes = this.stream.Read(result, 0, length);
 
             if (readBytes != length)
@@ -57,24 +57,24 @@
 
         public void Write<T>(long position, ref T data) where T : struct
         {
-            var bytes = StructureToByteArray(data);
-            WriteArray(position, bytes);
+            var bytes = this.StructureToByteArray(data);
+            this.WriteArray(position, bytes);
         }
 
         public void WriteArray(long position, byte[] bytes)
         {
-            stream.Seek(position, SeekOrigin.Begin);
-            stream.Write(bytes, 0, bytes.Length);
+            this.stream.Seek(position, SeekOrigin.Begin);
+            this.stream.Write(bytes, 0, bytes.Length);
         }
 
         public void Write(long position, int value)
         {
-            WriteArray(position, BitConverter.GetBytes(value));
+            this.WriteArray(position, BitConverter.GetBytes(value));
         }
 
         public void Resize(long newSize)
         {
-            stream.SetLength(newSize);
+            this.stream.SetLength(newSize);
         }
 
         public void Flush()

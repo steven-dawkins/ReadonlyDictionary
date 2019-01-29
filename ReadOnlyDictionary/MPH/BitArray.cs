@@ -29,18 +29,18 @@ namespace MPHTest.MPH
 
         public BitArray(int size)
         {
-            _table = new byte[size];
+            this._table = new byte[size];
         }
 
         public byte this[int i]
         {
-            get { return _table[i]; }
-            set { _table[i] = value; }
+            get { return this._table[i]; }
+            set { this._table[i] = value; }
         }
 
         public bool GetBit(uint i)
         {
-            fixed (byte* ptrTable = &_table[0])
+            fixed (byte* ptrTable = &this._table[0])
             {
                 var i32OccupTable = (uint*) ptrTable;
                 return (i32OccupTable[i >> 5] & Bitmask32[i & 0x0000001f])!=0;
@@ -49,7 +49,7 @@ namespace MPHTest.MPH
 
         public void SetBit(uint i)
         {
-            fixed (byte* ptrTable = &_table[0])
+            fixed (byte* ptrTable = &this._table[0])
             {
                 var i32OccupTable = (uint*) ptrTable;
                 i32OccupTable[i >> 5] |= Bitmask32[i & 0x0000001f];
@@ -58,7 +58,7 @@ namespace MPHTest.MPH
 
         public void UnSetBit(uint i)
         {
-            fixed (byte* ptrTable = &_table[0])
+            fixed (byte* ptrTable = &this._table[0])
             {
                 var i32OccupTable = (uint*) ptrTable;
                 i32OccupTable[i >> 5] ^= ((Bitmask32[i & 0x0000001f]));
@@ -67,7 +67,7 @@ namespace MPHTest.MPH
 
         public void Zero()
         {
-            Array.Clear(_table, 0, _table.Length);
+            Array.Clear(this._table, 0, this._table.Length);
         }
     }
 }

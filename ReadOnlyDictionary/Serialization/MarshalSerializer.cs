@@ -10,13 +10,13 @@
     {
         public byte[] Serialize(T value)
         {
-            return StructureToByteArray(value);
+            return this.StructureToByteArray(value);
         }
 
         public T Deserialize(byte[] bytes)
         {
             object value = default(T);
-            ByteArrayToStructure(bytes, ref value);
+            this.ByteArrayToStructure(bytes, ref value);
             return (T)value;
         }
 

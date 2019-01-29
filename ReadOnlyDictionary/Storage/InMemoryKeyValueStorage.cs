@@ -44,7 +44,7 @@
 
         public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
         {
-            if (!additionalMetadata.ContainsKey(name))
+            if (!this.additionalMetadata.ContainsKey(name))
             {
                 return default(T2);
             }

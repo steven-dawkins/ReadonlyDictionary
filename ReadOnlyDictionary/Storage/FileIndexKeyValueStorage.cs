@@ -40,7 +40,7 @@
 
             try
             {
-                WriteData(values, serializer, indexSerializer, count, fi, additionalData, additionalDataSerializerSettings);
+                this.WriteData(values, serializer, indexSerializer, count, fi, additionalData, additionalDataSerializerSettings);
             }
             catch (Exception)
             {
@@ -121,7 +121,7 @@
                 case Header.SerializationStrategyEnum.Protobuf:
                     return new ProtobufSerializer<TValue>();
                 case Header.SerializationStrategyEnum.JsonFlyWeight:
-                    var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
+                    var stateBytes = this.reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
                     var stateJson = Encoding.ASCII.GetString(stateBytes);
                     var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
                     return new JsonFlyweightSerializer<TValue>(state);
@@ -139,7 +139,7 @@
 
         public bool ContainsKey(TKey key)
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 return this.index.ContainsKey(key);
             }
@@ -149,14 +149,14 @@
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 long index;
                 if (this.index.TryGetValue(key, out index))
                 {
                     var serializedSize = this.reader.ReadInt32(index);
                     byte[] serialized = this.reader.ReadArray(index + sizeof(Int32), serializedSize);
-                    value = serializer.Deserialize(serialized);
+                    value = this.serializer.Deserialize(serialized);
                     return true;
                 }
                 else
@@ -171,7 +171,7 @@
         {
             get
             {
-                lock (mutex)
+                lock (this.mutex)
                 {
                     return this.index.Count;
                 }
@@ -180,7 +180,7 @@
 
         public IEnumerable<TKey> GetKeys()
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 return this.index.Keys;
             }
@@ -190,17 +190,17 @@
         {
             try
             {
-                return UnzipAndDeserialize<T2>(name, settings, true);
+                return this.UnzipAndDeserialize<T2>(name, settings, true);
             }
             catch (Exception)
             {
-                return UnzipAndDeserialize<T2>(name, settings, false);
+                return this.UnzipAndDeserialize<T2>(name, settings, false);
             }
         }
 
         private T2 UnzipAndDeserialize<T2>(string name, JsonSerializerSettings settings, bool unzip)
         {
-            var json = GetAdditionalDataJson(name, unzip);
+            var json = this.GetAdditionalDataJson(name, unzip);
 
             if (json == null)
             {
@@ -212,7 +212,7 @@
 
         public string GetAdditionalDataJson(string name, bool unzip)
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 if (!this.customBlockIndex.ContainsKey(name))
                 {
@@ -221,7 +221,7 @@
 
                 var block = this.customBlockIndex[name];
 
-                var blockBytes = reader.ReadArray(block.Position, block.Length);
+                var blockBytes = this.reader.ReadArray(block.Position, block.Length);
 
                 var blockJson = BytesToJson(blockBytes, unzip);
 
@@ -231,7 +231,7 @@
 
         public IEnumerable<string> GetAdditionalDataKeys()
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 return this.customBlockIndex.Keys;
             }
@@ -268,13 +268,13 @@
                 var value = item.Value;
                 var serialized = serializer.Serialize(value);
 
-                if (position + serialized.Length + sizeof(Int32) > reader.Capacity)
+                if (position + serialized.Length + sizeof(Int32) > this.reader.Capacity)
                 {
-                    this.reader.Resize(reader.Capacity * 2);
+                    this.reader.Resize(this.reader.Capacity * 2);
                 }
 
-                reader.Write(position, serialized.Length);
-                reader.WriteArray(position + sizeof(Int32), serialized);
+                this.reader.Write(position, serialized.Length);
+                this.reader.WriteArray(position + sizeof(Int32), serialized);
 
                 indexValues.Add(new KeyValuePair<TKey, long>(item.Key, position));
 
@@ -313,8 +313,8 @@
             // Resize to include index
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength);
 
-            reader.WriteArray(header.IndexPosition, indexBytes);
-            reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
+            this.reader.WriteArray(header.IndexPosition, indexBytes);
+            this.reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
 
             var c = additionalBlocks.Select(a => new
             {
@@ -322,7 +322,7 @@
                 Bytes = GetMetadataBytes(a)
             }).ToArray();
 
-            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();
+            var blocks = c.Select(content => this.ToCustomDataBlock(content.Name, content.Bytes)).ToArray();
 
             // Resize down to include custom blocks
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
@@ -342,9 +342,9 @@
             header.customBlockCount = blocks.Length;
             header.Count = count;
             header.magic = Header.expectedMagic;
-            reader.Write(0, ref header);
+            this.reader.Write(0, ref header);
 
-            reader.Flush();
+            this.reader.Flush();
         }
 
         private static byte[] GetMetadataBytes(KeyValuePair<string, object> a)
@@ -428,7 +428,7 @@
 
         public override string ToString()
         {
-            return $"Serializer: {serializer} Count: {index.Count} Reader: {reader}";
+            return $"Serializer: {this.serializer} Count: {this.index.Count} Reader: {this.reader}";
         }
     }
 }
