@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using Newtonsoft.Json;
+    using Polly;
     using ReadonlyDictionary.Exceptions;
     using ReadonlyDictionary.Index;
     using ReadonlyDictionary.Serialization;
@@ -103,10 +104,17 @@
             string filename,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             ISerializer<TValue> serializer = null,
-            IIndexSerializer<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexFactory = null,
+            Policy policy = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetReaderForStrategy(strategy, fi);
+
+            if (policy != null)
+            {
+                reader = new PolicyStore(reader, policy);
+            }
+
             return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexFactory);
         }
     }
