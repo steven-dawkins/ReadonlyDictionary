@@ -31,7 +31,7 @@
     }
 
     [StructLayout(LayoutKind.Explicit, /*Size = 16,*/ CharSet = CharSet.Unicode, Pack = 1)]
-    unsafe internal struct CustomDataBlock
+    internal unsafe struct CustomDataBlock
     {
         [FieldOffset(0)]
         public Int64 Position;

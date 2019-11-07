@@ -25,7 +25,6 @@
         public Book(string name, string name2, string name3)
             : this()
         {
-
             if (String.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Empty name", "name");

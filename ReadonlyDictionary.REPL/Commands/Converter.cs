@@ -18,7 +18,6 @@
         {
             using (var store = FileIndexKeyValueStorageBuilder<string, JObject>.Open(filename, serializer: new JsonSerializer<JObject>()))
             {
-
                 var everything = from key in store.GetKeys()
                                  select new { Key = key, Value = store.Get(key) };
 

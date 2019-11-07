@@ -29,23 +29,29 @@ namespace MPHTest.MPH
         private const uint KeysPerBucket = 4; // average number of keys per bucket
         private const uint MaxProbesBase = 1 << 20;
 
-        struct Item
+        private struct Item
         {
             public uint F;
             public uint H;
         }
 
-        struct Bucket
+        private struct Bucket
         {
             public uint ItemsList; // offset
-            uint _sizeBucketID;
+            private uint _sizeBucketID;
 
-            public uint Size { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
+            public uint Size
+            {
+                get { return this._sizeBucketID; } set { this._sizeBucketID = value; }
+            }
 
-            public uint BucketID { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
+            public uint BucketID
+            {
+                get { return this._sizeBucketID; } set { this._sizeBucketID = value; }
+            }
         }
 
-        struct MapItem
+        private struct MapItem
         {
             public uint F;
             public uint H;
@@ -54,12 +60,12 @@ namespace MPHTest.MPH
 
 ;
 
-        Bucket[] _buckets;
-        Item[] _items;
-        readonly uint _nbuckets;	    // number of buckets
-        readonly uint _n;			    // number of bins
-        readonly uint _m;				// number of keys
-        readonly IKeySource _keySource;
+        private Bucket[] _buckets;
+        private Item[] _items;
+        private readonly uint _nbuckets;	    // number of buckets
+        private readonly uint _n;			    // number of bins
+        private readonly uint _m;				// number of keys
+        private readonly IKeySource _keySource;
 
         public uint NBuckets
         {
@@ -79,15 +85,30 @@ namespace MPHTest.MPH
             this._m = keySource.NbKeys;
             this._nbuckets = this._m / KeysPerBucket + 1;
 
-            if (loadFactor < 0.5) loadFactor = 0.5;
-            if (loadFactor >= 0.99) loadFactor = 0.99;
+            if (loadFactor < 0.5)
+            {
+                loadFactor = 0.5;
+            }
+
+            if (loadFactor >= 0.99)
+            {
+                loadFactor = 0.99;
+            }
 
             this._n = (uint)(this._m / (loadFactor)) + 1;
 
-            if (this._n % 2 == 0) this._n++;
-            for (; ; )
+            if (this._n % 2 == 0)
             {
-                if (MillerRabin.CheckPrimality(this._n)) break;
+                this._n++;
+            }
+
+            for (; ;)
+            {
+                if (MillerRabin.CheckPrimality(this._n))
+                {
+                    break;
+                }
+
                 this._n += 2; // just odd numbers can be primes for n > 2
             }
 
@@ -95,7 +116,7 @@ namespace MPHTest.MPH
             this._items = new Item[this._m];
         }
 
-        bool BucketsInsert(MapItem[] mapItems, uint itemIdx)
+        private bool BucketsInsert(MapItem[] mapItems, uint itemIdx)
         {
             var bucketIdx = mapItems[itemIdx].BucketNum;
             var p = this._buckets[bucketIdx].ItemsList;
@@ -116,10 +137,12 @@ namespace MPHTest.MPH
             return true;
         }
 
-        void BucketsClean()
+        private void BucketsClean()
         {
             for (uint i = 0; i < this._nbuckets; i++)
+            {
                 this._buckets[i].Size = 0;
+            }
         }
 
         public bool MappingPhase(out uint hashSeed, out uint maxBucketSize)
@@ -130,7 +153,7 @@ namespace MPHTest.MPH
             var rdm = new Random(111);
 
             maxBucketSize = 0;
-            for (; ; )
+            for (; ;)
             {
                 mappingIterations--;
                 hashSeed = (uint)rdm.Next((int)this._m); // ((cmph_uint32)rand() % this->_m);
@@ -167,7 +190,9 @@ namespace MPHTest.MPH
                 for (i = 0; i < this._m; i++)
                 {
                     if (!this.BucketsInsert(mapItems, i))
+                    {
                         break;
+                    }
                 }
 
                 if (i == this._m)
@@ -194,7 +219,10 @@ namespace MPHTest.MPH
             {
                 bucketSize = inputBuckets[i].Size;
                 if (bucketSize == 0)
+                {
                     continue;
+                }
+
                 sortedLists[bucketSize].Size++;
             }
 
@@ -248,12 +276,12 @@ namespace MPHTest.MPH
                 }
             }
 
-            //Return the items sorted in new order and free the old items sorted in old order
+            // Return the items sorted in new order and free the old items sorted in old order
             this._items = outputItems;
             return sortedLists;
         }
 
-        bool PlaceBucketProbe(uint probe0Num, uint probe1Num, uint bucketNum, uint size, BitArray occupTable)
+        private bool PlaceBucketProbe(uint probe0Num, uint probe1Num, uint bucketNum, uint size, BitArray occupTable)
         {
             uint i;
             uint position;
@@ -276,7 +304,7 @@ namespace MPHTest.MPH
             if (i != size) // Undo the placement
             {
                 p = this._buckets[bucketNum].ItemsList;
-                for (; ; )
+                for (; ;)
                 {
                     if (i == 0)
                     {
@@ -339,7 +367,11 @@ namespace MPHTest.MPH
                     }
 
                     probeNum++;
-                    if (probeNum < maxProbes && probe1Num < this._n) continue;
+                    if (probeNum < maxProbes && probe1Num < this._n)
+                    {
+                        continue;
+                    }
+
                     sortedLists[i].Size = sortedListSize;
                     return false;
                 }

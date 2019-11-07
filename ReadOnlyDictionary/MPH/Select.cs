@@ -26,7 +26,7 @@ namespace MPHTest.MPH
     internal class Select
     {
         #region <Tables>
-        static readonly byte[] RankLookupTable = new byte[]{
+        private static readonly byte[] RankLookupTable = new byte[] {
                                                                0 , 1 , 1 , 2 , 1 , 2 , 2 , 3 , 1 , 2 , 2 , 3 , 2 , 3 , 3 , 4
                                                                ,  1 , 2 , 2 , 3 , 2 , 3 , 3 , 4 , 2 , 3 , 3 , 4 , 3 , 4 , 4 , 5
                                                                ,  1 , 2 , 2 , 3 , 2 , 3 , 3 , 4 , 2 , 3 , 3 , 4 , 3 , 4 , 4 , 5
@@ -45,7 +45,7 @@ namespace MPHTest.MPH
                                                                ,  4 , 5 , 5 , 6 , 5 , 6 , 6 , 7 , 5 , 6 , 6 , 7 , 6 , 7 , 7 , 8,
 };
 
-        static readonly byte[,] SelectLookupTable = new byte[256, 8] {
+        private static readonly byte[,] SelectLookupTable = new byte[256, 8] {
                                                                          { 255 , 255 , 255 , 255 , 255 , 255 , 255 , 255 } , { 0 , 255 , 255 , 255 , 255 , 255 , 255 , 255 } ,
                                                                          { 1 , 255 , 255 , 255 , 255 , 255 , 255 , 255 } , { 0 , 1 , 255 , 255 , 255 , 255 , 255 , 255 } ,
                                                                          { 2 , 255 , 255 , 255 , 255 , 255 , 255 , 255 } , { 0 , 2 , 255 , 255 , 255 , 255 , 255 , 255 } ,
@@ -176,20 +176,21 @@ namespace MPHTest.MPH
                                                                          { 1 , 2 , 3 , 4 , 5 , 6 , 7 , 255 } , { 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 }, };
         #endregion
 
-        static void Insert0(ref uint buffer)
+        private static void Insert0(ref uint buffer)
         {
             buffer = buffer >> 1;
         }
 
-        static void Insert1(ref uint buffer)
+        private static void Insert1(ref uint buffer)
         {
             buffer = buffer >> 1;
             buffer |= 0x80000000;
         }
 
-        uint _n, _m;
-        uint[] _bitsVec;
-        uint[] _selectTable;
+        private uint _n;
+        private uint _m;
+        private uint[] _bitsVec;
+        private uint[] _selectTable;
 
         public void Generate(uint[] keysVec, uint n, uint m)
         {
@@ -204,7 +205,7 @@ namespace MPHTest.MPH
             var j = 0;
             var i = j;
             var idx = i;
-            for (; ; )
+            for (; ;)
             {
                 while (keysVec[j] == i)
                 {
@@ -234,14 +235,14 @@ namespace MPHTest.MPH
 
             if ((idx & 0x1f) != 0)
             {
-                buffer = buffer >> 0x20 - (idx & 0x1f);
+                buffer = buffer >> (0x20 - (idx & 0x1f));
                 this._bitsVec[(idx - 1) >> 5] = buffer;
             }
 
             this.GenerateSelTable();
         }
 
-        unsafe void GenerateSelTable()
+        private unsafe void GenerateSelTable()
         {
             fixed (uint* pptrBitsVec = &(this._bitsVec[0]))
             {
@@ -268,7 +269,7 @@ namespace MPHTest.MPH
             }
         }
 
-        unsafe public uint Query(uint oneIdx)
+        public unsafe uint Query(uint oneIdx)
         {
             fixed (uint* pptrBitsVec = &(this._bitsVec[0]))
             {
@@ -290,7 +291,7 @@ namespace MPHTest.MPH
             }
         }
 
-        unsafe public uint NextQuery(uint vecBitIdx)
+        public unsafe uint NextQuery(uint vecBitIdx)
         {
             fixed (uint* pptrBitsVec = &(this._bitsVec[0]))
             {
@@ -307,7 +308,7 @@ namespace MPHTest.MPH
                     vecByteIdx++;
                 } while (partSum <= oneIdx);
                 return
-                    (SelectLookupTable[bitsTable[vecByteIdx - 1], oneIdx - oldPartSum] + ((vecByteIdx - 1) << 3));
+                    SelectLookupTable[bitsTable[vecByteIdx - 1], oneIdx - oldPartSum] + ((vecByteIdx - 1) << 3);
             }
         }
     }

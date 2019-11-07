@@ -121,8 +121,7 @@
             {
                 return new MapState(
                     forward: this.forward,
-                    reverse: this.reverse
-                );
+                    reverse: this.reverse);
             }
 
             public class Indexer<T3, T4>
@@ -262,8 +261,7 @@
             public JsonFlyweightConverterState Serialize()
             {
                 return new JsonFlyweightConverterState(
-                    dictionary: this.dictionary.Serialize()
-                );
+                    dictionary: this.dictionary.Serialize());
             }
 
             protected ConvertType Create(Type objectType, JObject jObject)

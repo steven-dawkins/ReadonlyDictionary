@@ -19,11 +19,11 @@ namespace MPHTest.MPH
 {
     /// <summary>
     /// Bob Jenkin's Hash function
-    /// see http://en.wikipedia.org/wiki/Jenkins_hash_function
+    /// see http://en.wikipedia.org/wiki/Jenkins_hash_function.
     /// </summary>
     internal static class JenkinsHash
     {
-        static void Mix(ref uint a, ref uint b, ref uint c)
+        private static void Mix(ref uint a, ref uint b, ref uint c)
         {
             a -= b; a -= c; a ^= (c >> 13);
             b -= c; b -= a; b ^= (a << 8);
@@ -37,11 +37,11 @@ namespace MPHTest.MPH
         }
 
         /// <summary>
-        /// Hash the vector K in hashes
+        /// Hash the vector K in hashes.
         /// </summary>
-        /// <param name="seed">Hash vector hash</param>
-        /// <param name="k">Key to hash</param>
-        /// <param name="hashes">Vector of 3 uints to set to the hash value</param>
+        /// <param name="seed">Hash vector hash.</param>
+        /// <param name="k">Key to hash.</param>
+        /// <param name="hashes">Vector of 3 uints to set to the hash value.</param>
         public static void HashVector(uint seed, byte[] k, uint[] hashes)
         {
             var p = 0;

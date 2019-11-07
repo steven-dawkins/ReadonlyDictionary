@@ -11,15 +11,15 @@
     using ReadonlyDictionary.Serialization;
     using ReadonlyDictionary.Storage;
 
-    //public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
-    //{
+    // public class MinPerfectHashKeyValueStorage<TValue> : IKeyValueStore<TValue>
+    // {
     //    private readonly MinPerfectHash hashFunction;
     //    private readonly uint count;
     //    private readonly Func<byte[], TValue> deserializer;
     //    private MemoryMappedFile mmf;
     //    private MemoryMappedViewAccessor accessor;
 
-    //    public MinPerfectHashKeyValueStorage(
+    // public MinPerfectHashKeyValueStorage(
     //        IEnumerable<KeyValuePair<Guid, TValue>> values,
     //        uint count,
     //        string filename,
@@ -29,39 +29,39 @@
     //    {
     //        var keyGenerator = new MphKeySource<Guid>(values.Select(v => v.Key), count);
 
-    //        this.hashFunction = MinPerfectHash.Create(keyGenerator, 1);
+    // this.hashFunction = MinPerfectHash.Create(keyGenerator, 1);
     //        this.count = count;
 
-    //        this.deserializer = deserializer;
+    // this.deserializer = deserializer;
 
-    //        var fi = PrepareFileForWriting(filename);
+    // var fi = PrepareFileForWriting(filename);
 
-    //        this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, filename, initialSize);
+    // this.mmf = MemoryMappedFile.CreateFromFile(fi.FullName, FileMode.CreateNew, filename, initialSize);
 
-    //        this.accessor = mmf.CreateViewAccessor();
+    // this.accessor = mmf.CreateViewAccessor();
 
-    //        var guidBytes = Guid.NewGuid().ToByteArray().Length;
+    // var guidBytes = Guid.NewGuid().ToByteArray().Length;
     //        // allocate space for index
     //        long indexSize = count * (guidBytes + sizeof(long));
     //        long position = indexSize + sizeof(long);
 
-    //        this.index = new Dictionary<Guid, long>();
+    // this.index = new Dictionary<Guid, long>();
 
-    //        foreach (var item in values)
+    // foreach (var item in values)
     //        {
     //            var value = item.Value;
     //            var serialized = serializer(value);
     //            accessor.Write(position, serialized.Length);
     //            accessor.WriteArray(position + sizeof(Int32), serialized, 0, serialized.Length);
 
-    //            index.Add(item.Key, position);
+    // index.Add(item.Key, position);
     //            position += serialized.Length + sizeof(Int32);
     //        }
 
-    //        // store count in file
+    // // store count in file
     //        accessor.Write(0, count);
 
-    //        // write index after count
+    // // write index after count
     //        long indexPosition = sizeof(long);
     //        foreach (var item in index)
     //        {
@@ -72,29 +72,29 @@
     //            indexPosition += keyBytes.Length;
     //        }
 
-    //        this.accessor.Flush();
+    // this.accessor.Flush();
     //    }
 
-    //    public bool ContainsKey(Guid key)
+    // public bool ContainsKey(Guid key)
     //    {
     //        throw new NotImplementedException();
     //    }
 
-    //    public bool TryGetValue(Guid key, out TValue value)
+    // public bool TryGetValue(Guid key, out TValue value)
     //    {
     //        throw new NotImplementedException();
     //    }
 
-    //    public uint Count { get { return count; } }
+    // public uint Count { get { return count; } }
 
-    //    public void Dispose()
+    // public void Dispose()
     //    {
     //        this.accessor.Flush();
     //        this.accessor.Dispose();
     //        this.mmf.Dispose();
     //    }
 
-    //    private static FileInfo PrepareFileForWriting(string filename)
+    // private static FileInfo PrepareFileForWriting(string filename)
     //    {
     //        var fi = new FileInfo(filename);
     //        if (fi.Exists)
@@ -102,11 +102,11 @@
     //            fi.Delete();
     //        }
 
-    //        if (!fi.Directory.Exists)
+    // if (!fi.Directory.Exists)
     //        {
     //            fi.Directory.Create();
     //        }
     //        return fi;
     //    }
-    //}
+    // }
 }

@@ -1,16 +1,7 @@
 ﻿namespace ReadonlyDictionary.REPL
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
-    using ReadonlyDictionary.Serialization;
     using ReadonlyDictionary.Storage;
-    using ReadonlyDictionaryTests.SampleData;
-    using Serilog;
-    using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
 
     public class Loader : Replify.IReplCommand
     {

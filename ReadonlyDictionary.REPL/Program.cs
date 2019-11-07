@@ -65,11 +65,11 @@
         }
     }
 
-    class Program
+    internal class Program
     {
-        //Load.File("C:\Temp\MandolineCache\IND_DB\aug136fdbin_mandoline.db.fcst.rawdic");
+        // Load.File("C:\Temp\MandolineCache\IND_DB\aug136fdbin_mandoline.db.fcst.rawdic");
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var repl = new Replify.ClearScriptRepl();
 

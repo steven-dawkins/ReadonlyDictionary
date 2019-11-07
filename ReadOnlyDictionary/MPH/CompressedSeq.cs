@@ -21,14 +21,14 @@ namespace MPHTest.MPH
     [Serializable]
     internal class CompressedSeq
     {
-        uint[] _lengthRems;
-        uint _n;
-        uint _remR;
-        Select _sel;
-        uint[] _storeTable;
-        uint _totalLength;
+        private uint[] _lengthRems;
+        private uint _n;
+        private uint _remR;
+        private Select _sel;
+        private uint[] _storeTable;
+        private uint _totalLength;
 
-        static uint ILog2(uint x)
+        private static uint ILog2(uint x)
         {
             uint res = 0;
 
@@ -69,7 +69,10 @@ namespace MPHTest.MPH
             for (i = 0; i < this._n; i++)
             {
                 if (valsTable[i] == 0)
+                {
                     continue;
+                }
+
                 var storedValue = valsTable[i] - ((1U << (int)lengths[i]) - 1U);
                 BitBool.SetBitsAtPos(this._storeTable, this._totalLength, storedValue, lengths[i]);
                 this._totalLength += lengths[i];

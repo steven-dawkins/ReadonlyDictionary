@@ -19,20 +19,22 @@ namespace MPHTest.MPH
     using System;
 
     /// <summary>
-    /// Minimum Perfect Hash function class
+    /// Minimum Perfect Hash function class.
     /// </summary>
     [Serializable]
     public class MinPerfectHash
     {
-        CompressedSeq _cs;
-        uint _hashSeed, _n, _nbuckets;
+        private CompressedSeq _cs;
+        private uint _hashSeed;
+        private uint _n;
+        private uint _nbuckets;
 
         /// <summary>
-        /// Create a minimum perfect hash function for the provided key set
+        /// Create a minimum perfect hash function for the provided key set.
         /// </summary>
-        /// <param name="keySource">Key source</param>
-        /// <param name="c">Load factor (.5 &gt; c &gt; .99)</param>
-        /// <returns>Created Minimum Perfect Hash function</returns>
+        /// <param name="keySource">Key source.</param>
+        /// <param name="c">Load factor (.5 &gt; c &gt; .99).</param>
+        /// <returns>Created Minimum Perfect Hash function.</returns>
         public static MinPerfectHash Create(IKeySource keySource, double c)
         {
             var buckets = new Buckets(keySource, c);
@@ -51,7 +53,10 @@ namespace MPHTest.MPH
                 var sortedLists = buckets.OrderingPhase(maxBucketSize);
                 var searchingSuccess = buckets.SearchingPhase(maxBucketSize, sortedLists, dispTable);
 
-                if (searchingSuccess) break;
+                if (searchingSuccess)
+                {
+                    break;
+                }
 
                 if (iteration <= 0)
                 {
@@ -70,25 +75,28 @@ namespace MPHTest.MPH
         /// <summary>
         /// Maximun value of the hash function.
         /// </summary>
-        public uint N { get { return this._n; } }
+        public uint N
+        {
+            get { return this._n; }
+        }
 
         /// <summary>
-        /// Compute the hash value associate with the key
+        /// Compute the hash value associate with the key.
         /// </summary>
-        /// <param name="key">key from the original key set</param>
-        /// <returns>Hash value (0 &gt; hash &gt; N)</returns>
+        /// <param name="key">key from the original key set.</param>
+        /// <returns>Hash value (0 &gt; hash &gt; N).</returns>
         public uint Search(byte[] key)
         {
             var hl = new uint[3];
             JenkinsHash.HashVector(this._hashSeed, key, hl);
             var g = hl[0] % this._nbuckets;
             var f = hl[1] % this._n;
-            var h = hl[2] % (this._n - 1) + 1;
+            var h = (hl[2] % (this._n - 1)) + 1;
 
             var disp = this._cs.Query(g);
             var probe0Num = disp % this._n;
             var probe1Num = disp / this._n;
-            var position = (uint)((f + ((ulong)h) * probe0Num + probe1Num) % this._n);
+            var position = (uint)((f + (((ulong)h) * probe0Num) + probe1Num) % this._n);
             return position;
         }
     }

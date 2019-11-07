@@ -18,7 +18,7 @@
 namespace MPHTest.MPH
 {
     /// <summary>
-    /// Miller–Rabin primality test
+    /// Miller–Rabin primality test.
     /// </summary>
     internal static class MillerRabin
     {
@@ -61,16 +61,31 @@ namespace MPHTest.MPH
         }
 
         /// <summary>
-        /// Check if value n is a prime number
+        /// Check if value n is a prime number.
         /// </summary>
-        /// <param name="n">Number to check</param>
-        /// <returns>true if n is prime</returns>
+        /// <param name="n">Number to check.</param>
+        /// <returns>true if n is prime.</returns>
         public static bool CheckPrimality(ulong n)
         {
-            if ((n % 2L) == 0L) return false;
-            if ((n % 3L) == 0L) return false;
-            if ((n % 5L) == 0L) return false;
-            if ((n % 7L) == 0L) return false;
+            if ((n % 2L) == 0L)
+            {
+                return false;
+            }
+
+            if ((n % 3L) == 0L)
+            {
+                return false;
+            }
+
+            if ((n % 5L) == 0L)
+            {
+                return false;
+            }
+
+            if ((n % 7L) == 0L)
+            {
+                return false;
+            }
 
             ulong s = 0L;
             var d = n - 1L;
@@ -81,9 +96,17 @@ namespace MPHTest.MPH
             }
             while ((d % 2L) == 0L);
             ulong a = 2L;
-            if (!CheckWitness(IntPow(a, d, n), n, s)) return false;
+            if (!CheckWitness(IntPow(a, d, n), n, s))
+            {
+                return false;
+            }
+
             a = 7L;
-            if (!CheckWitness(IntPow(a, d, n), n, s)) return false;
+            if (!CheckWitness(IntPow(a, d, n), n, s))
+            {
+                return false;
+            }
+
             a = 0x3dL;
             return CheckWitness(IntPow(a, d, n), n, s);
         }

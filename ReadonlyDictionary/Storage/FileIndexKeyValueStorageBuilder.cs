@@ -96,8 +96,7 @@
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexSerializer<TKey> indexFactory = null,
             IEnumerable<KeyValuePair<string, object>> additionalMetadata = null,
-            JsonSerializerSettings additionalDataSerializerSettings = null
-            )
+            JsonSerializerSettings additionalDataSerializerSettings = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
