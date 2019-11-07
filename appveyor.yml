@@ -22,6 +22,7 @@ build:
   publish_nuget: true
   publish_nuget_symbols: false
   verbosity: minimal
+  project: ReadOnlyDictionary.sln
 deploy:
 - provider: NuGet
   skip_symbols: false
