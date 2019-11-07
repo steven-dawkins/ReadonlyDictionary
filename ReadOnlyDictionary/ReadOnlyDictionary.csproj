@@ -9,11 +9,12 @@
 
     <!-- Optional: Declare that the Repository URL can be published to NuSpec -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <Description>Build once read many key value store based on memory mapped files</Description>
+    <Description>Build once read many key value store based on memory mapped files http://www.apache.org/licenses/LICENSE-2.0</Description>
     <PackageProjectUrl>https://github.com/steven-dawkins/ReadonlyDictionary</PackageProjectUrl>
-    <PackageLicenseExpression>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseExpression>
+    <PackageLicenseExpression></PackageLicenseExpression>
     <Authors>steven.dawkins@gmail.com</Authors>
     <Company>steven.dawkins@gmail.comsteven.dawkins@gmail.com</Company>
+    <Copyright>Steven Dawkins</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
