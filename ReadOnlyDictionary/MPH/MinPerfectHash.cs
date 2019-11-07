@@ -70,7 +70,7 @@ namespace MPHTest.MPH
         /// <summary>
         /// Maximun value of the hash function.
         /// </summary>
-        public uint N { get { return this._n; }}
+        public uint N { get { return this._n; } }
 
         /// <summary>
         /// Compute the hash value associate with the key
@@ -92,5 +92,4 @@ namespace MPHTest.MPH
             return position;
         }
     }
-
 }

@@ -28,7 +28,6 @@ namespace MPHTest.MPH
         uint[] _storeTable;
         uint _totalLength;
 
-
         static uint ILog2(uint x)
         {
             uint res = 0;

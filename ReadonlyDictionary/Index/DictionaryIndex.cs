@@ -89,7 +89,6 @@
             return this.dictionary[key];
         }
 
-
         public bool ContainsKey(T key)
         {
             return this.dictionary.ContainsKey(key);
@@ -110,5 +109,4 @@
             get { return this.dictionary.Keys; }
         }
     }
-
 }

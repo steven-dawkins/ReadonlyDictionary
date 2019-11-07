@@ -79,14 +79,13 @@
                 }
 
                 if (serializer == null)
-                        {
+                {
                     this.serializer = this.ReadSerializerFromHeader(header);
-                        }
-                        else
-                        {
+                }
+                else
+                {
                     this.serializer = serializer;
-                        }
-
+                }
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
@@ -319,7 +318,7 @@
             var c = additionalBlocks.Select(a => new
             {
                 Name = a.Key,
-                Bytes = GetMetadataBytes(a)
+                Bytes = GetMetadataBytes(a),
             }).ToArray();
 
             var blocks = c.Select(content => this.ToCustomDataBlock(content.Name, content.Bytes)).ToArray();

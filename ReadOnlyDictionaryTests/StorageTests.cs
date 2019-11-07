@@ -90,13 +90,10 @@
         {
             using (var temp = BookStorage.Create(this.randomData, "temp.raw", 1 * 1024 * 1024, serializer, this.randomData.LongLength, strategy))
             {
-
             }
 
             this.storage = BookStorage.Open("temp.raw", serializer: serializer);
         }
-
-
     }
 
     [TestClass]
@@ -130,7 +127,6 @@
 
             using (var temp = BookStorage.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
             {
-
             }
 
             using (var reader = BookStorage.Open("temp2.raw", strategy, null))
@@ -171,14 +167,13 @@
             var additionalMetadata = new KeyValuePair<string, object>[]
             {
                 new KeyValuePair<string, object>("Lorem", "Ipsum"),
-                new KeyValuePair<string, object>("A", new Book("The Hobbit", "", ""))
+                new KeyValuePair<string, object>("A", new Book("The Hobbit", "", "")),
             };
 
             var values = RandomDataGenerator.RandomData(1000);
 
             using (var temp = BookStorage.Create(values, "temp_metadata.raw", 1 * 1024, serializer, 100000, additionalMetadata: additionalMetadata))
             {
-
             }
 
             using (var temp = BookStorage.Open("temp_metadata.raw", serializer: serializer))

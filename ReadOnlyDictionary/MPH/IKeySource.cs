@@ -19,8 +19,10 @@ namespace MPHTest.MPH
 {
     public interface IKeySource
     {
-        uint    NbKeys { get; }
-        byte[]  Read();
-        void    Rewind();
+        uint NbKeys { get; }
+
+        byte[] Read();
+
+        void Rewind();
     }
 }

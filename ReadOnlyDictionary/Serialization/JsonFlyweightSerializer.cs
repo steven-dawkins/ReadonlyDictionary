@@ -19,13 +19,11 @@
         public JsonFlyweightSerializer()
             : this(new FlyweightDataContractResolver(), new JsonFlyweightConverter<string>())
         {
-
         }
 
         public JsonFlyweightSerializer(object state)
             : this((JsonFlyweightSerializerState)state)
         {
-
         }
 
         public JsonFlyweightSerializer(JsonFlyweightSerializerState state)
@@ -43,8 +41,8 @@
             this.contract = contract;
             this.settings = new JsonSerializerSettings()
             {
-                Converters = new [] { this.converter },
-                ContractResolver = contract
+                Converters = new[] { this.converter },
+                ContractResolver = contract,
             };
         }
 
@@ -61,7 +59,6 @@
                 this.Converter = converter;
             }
         }
-
 
         public JsonFlyweightSerializerState Serialize()
         {
@@ -93,7 +90,6 @@
 
             public Map() : this(new Dictionary<T1, T2>(), new Dictionary<T2, T1>())
             {
-
             }
 
             public Map(MapState state) : this(state.Forward, state.Reverse)
@@ -119,7 +115,6 @@
                     this.Forward = forward;
                     this.Reverse = reverse;
                 }
-
             }
 
             public MapState Serialize()
@@ -129,7 +124,6 @@
                     reverse: this.reverse
                 );
             }
-
 
             public class Indexer<T3, T4>
             {
@@ -167,6 +161,7 @@
             }
 
             public Indexer<T1, T2> Forward { get; private set; }
+
             public Indexer<T2, T1> Reverse { get; private set; }
         }
 
@@ -206,7 +201,6 @@
                 }
             }
 
-
             protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
             {
                 var property = base.CreateProperty(member, memberSerialization);
@@ -243,7 +237,6 @@
             public JsonFlyweightConverter()
                 : this(new Map<string, int>())
             {
-
             }
 
             public JsonFlyweightConverter(JsonFlyweightConverterState state)
@@ -266,13 +259,11 @@
                 }
             }
 
-
             public JsonFlyweightConverterState Serialize()
             {
                 return new JsonFlyweightConverterState(
                     dictionary: this.dictionary.Serialize()
                 );
-
             }
 
             protected ConvertType Create(Type objectType, JObject jObject)
@@ -310,6 +301,4 @@
             }
         }
     }
-
-
 }

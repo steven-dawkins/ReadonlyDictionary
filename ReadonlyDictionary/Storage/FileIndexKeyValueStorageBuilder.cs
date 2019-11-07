@@ -13,7 +13,11 @@
 
     public class FileIndexKeyValueStorageBuilder<TKey, TValue>
     {
-        public enum AccessStrategy { Streams, MemoryMapped }
+        public enum AccessStrategy
+        {
+            Streams,
+            MemoryMapped,
+        }
 
         public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
             IEnumerable<KeyValuePair<TKey, TValue>> values,

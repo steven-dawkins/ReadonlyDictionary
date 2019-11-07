@@ -24,7 +24,7 @@ namespace MPHTest.MPH
             var wordIdx = pos >> 5;
             var shift1 = pos & 0x1f;
             var shift2 = 0x20 - shift1;
-            var stringMask = (uint) ((1 << (int)stringLength) - 1);
+            var stringMask = (uint)((1 << (int)stringLength) - 1);
             bitsTable[wordIdx] &= ~(stringMask << (int)shift1);
             bitsTable[wordIdx] |= bitsString << (int)shift1;
             if (shift2 < stringLength)
@@ -78,9 +78,5 @@ namespace MPHTest.MPH
 
             return bitsString;
         }
-
-
-
-
     }
 }

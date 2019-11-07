@@ -9,6 +9,7 @@
     public interface ISerializer<T>
     {
         byte[] Serialize(T value);
+
         T Deserialize(byte[] bytes);
 
         Object GetState();

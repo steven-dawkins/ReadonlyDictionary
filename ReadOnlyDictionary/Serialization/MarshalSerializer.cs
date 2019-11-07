@@ -6,7 +6,7 @@
     using ProtoBuf;
 
     // http://stackoverflow.com/questions/3278827/how-to-convert-a-structure-to-a-byte-array-in-c
-    public class MarshalSerializer<T> : ISerializer<T> where T: struct
+    public class MarshalSerializer<T> : ISerializer<T> where T : struct
     {
         public byte[] Serialize(T value)
         {

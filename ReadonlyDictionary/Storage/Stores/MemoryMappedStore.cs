@@ -86,8 +86,6 @@
             this.accessor.Flush();
         }
 
-
-
         public void Resize(long newSize)
         {
             var fi = new FileInfo(this.fileInfo.FullName + "_" + newSize);
@@ -137,7 +135,6 @@
             this.mmf = MemoryMappedFile.CreateFromFile(this.fileInfo.FullName, FileMode.Open);
             this.accessor = this.mmf.CreateViewAccessor();
         }
-
 
         public int ReadInt32(long index)
         {

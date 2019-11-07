@@ -40,8 +40,9 @@ namespace MPHTest.MPH
             public uint ItemsList; // offset
             uint _sizeBucketID;
 
-            public uint Size	   { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
-            public uint BucketID   { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
+            public uint Size { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
+
+            public uint BucketID { get { return this._sizeBucketID; } set { this._sizeBucketID = value; } }
         }
 
         struct MapItem
@@ -50,11 +51,11 @@ namespace MPHTest.MPH
             public uint H;
             public uint BucketNum;
         }
+
 ;
 
-
-        Bucket[]   _buckets;
-        Item[]     _items;
+        Bucket[] _buckets;
+        Item[] _items;
         readonly uint _nbuckets;	    // number of buckets
         readonly uint _n;			    // number of bins
         readonly uint _m;				// number of keys
@@ -76,23 +77,22 @@ namespace MPHTest.MPH
 
             var loadFactor = c;
             this._m = keySource.NbKeys;
-            this._nbuckets = this._m/KeysPerBucket + 1;
+            this._nbuckets = this._m / KeysPerBucket + 1;
 
-            if(loadFactor < 0.5 )  loadFactor = 0.5;
-            if(loadFactor >= 0.99) loadFactor = 0.99;
+            if (loadFactor < 0.5) loadFactor = 0.5;
+            if (loadFactor >= 0.99) loadFactor = 0.99;
 
-            this._n = (uint)(this._m/(loadFactor)) + 1;
+            this._n = (uint)(this._m / (loadFactor)) + 1;
 
-            if(this._n % 2 == 0) this._n++;
-            for(;;)
+            if (this._n % 2 == 0) this._n++;
+            for (; ; )
             {
-                if(MillerRabin.CheckPrimality(this._n)) break;
+                if (MillerRabin.CheckPrimality(this._n)) break;
                 this._n += 2; // just odd numbers can be primes for n > 2
             }
 
             this._buckets = new Bucket[this._nbuckets];
-            this._items   = new Item[this._m];
-
+            this._items = new Item[this._m];
         }
 
         bool BucketsInsert(MapItem[] mapItems, uint itemIdx)
@@ -261,7 +261,7 @@ namespace MPHTest.MPH
             var p = this._buckets[bucketNum].ItemsList;
 
             // try place bucket with probe_num
-            for(i = 0; i < size; i++) // placement
+            for (i = 0; i < size; i++) // placement
             {
                 position = (uint)((this._items[p].F + ((ulong)this._items[p].H) * probe0Num + probe1Num) % this._n);
                 if (occupTable.GetBit(position))
@@ -273,9 +273,9 @@ namespace MPHTest.MPH
                 p++;
             }
 
-            if(i != size) // Undo the placement
+            if (i != size) // Undo the placement
             {
-                p= this._buckets[bucketNum].ItemsList;
+                p = this._buckets[bucketNum].ItemsList;
                 for (; ; )
                 {
                     if (i == 0)
@@ -301,18 +301,18 @@ namespace MPHTest.MPH
         {
             var maxProbes = (uint)(((Math.Log(this._m) / Math.Log(2.0)) / 20) * MaxProbesBase);
             uint i;
-            var occupTable = new BitArray((int) (((this._n + 31) / 32) * sizeof(uint)));
+            var occupTable = new BitArray((int)(((this._n + 31) / 32) * sizeof(uint)));
 
-            for(i = maxBucketSize; i > 0; i--)
+            for (i = maxBucketSize; i > 0; i--)
             {
                 uint probeNum = 0;
                 uint probe0Num = 0;
                 uint probe1Num = 0;
                 var sortedListSize = sortedLists[i].Size;
-                while(sortedLists[i].Size != 0)
+                while (sortedLists[i].Size != 0)
                 {
                     var currBucket = sortedLists[i].BucketsList;
-                    uint nonPlacedBucket=0;
+                    uint nonPlacedBucket = 0;
                     for (uint j = 0; j < sortedLists[i].Size; j++)
                     {
                         // if bucket is successfully placed remove it from list
@@ -332,7 +332,7 @@ namespace MPHTest.MPH
 
                     sortedLists[i].Size = nonPlacedBucket;
                     probe0Num++;
-                    if(probe0Num >= this._n)
+                    if (probe0Num >= this._n)
                     {
                         probe0Num -= this._n;
                         probe1Num++;

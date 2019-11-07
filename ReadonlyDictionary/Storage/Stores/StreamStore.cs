@@ -122,7 +122,6 @@
             Marshal.FreeHGlobal(i);
         }
 
-
         private static FileInfo PrepareFileForWriting(FileInfo fileInfo)
         {
             if (fileInfo.Exists)
