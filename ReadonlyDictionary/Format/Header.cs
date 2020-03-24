@@ -1,11 +1,18 @@
-﻿using System;
-using System.Runtime.InteropServices;
-
-namespace ReadonlyDictionary.Format
+﻿namespace ReadonlyDictionary.Format
 {
+    using System;
+    using System.Runtime.InteropServices;
+
     internal struct Header
     {
-        public enum SerializationStrategyEnum { Custom = 0, Json, Protobuf, JsonFlyWeight };
+        public enum SerializationStrategyEnum
+        {
+            Custom = 0,
+            Json,
+            Protobuf,
+            JsonFlyWeight,
+        }
+;
 
         public static int CurrentVersion = 2; // V2 adds SerializerJsonStart / SerializerJsonLength
         public static Guid expectedMagic = Guid.Parse("22E809B7-7EFD-4D83-936C-1F3F7780B615");
@@ -24,7 +31,7 @@ namespace ReadonlyDictionary.Format
     }
 
     [StructLayout(LayoutKind.Explicit, /*Size = 16,*/ CharSet = CharSet.Unicode, Pack = 1)]
-    unsafe internal struct CustomDataBlock
+    internal unsafe struct CustomDataBlock
     {
         [FieldOffset(0)]
         public Int64 Position;
@@ -36,9 +43,8 @@ namespace ReadonlyDictionary.Format
         public fixed char Name[256];
 
         public override string ToString()
-        {            
-            return $"{Position} - {Length}";
+        {
+            return $"{this.Position} - {this.Length}";
         }
     }
-
 }

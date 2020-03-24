@@ -1,22 +1,22 @@
-﻿using ProtoBuf;
-using System;
-using System.IO;
-using System.Runtime.InteropServices;
-
-namespace ReadonlyDictionary.Serialization
+﻿namespace ReadonlyDictionary.Serialization
 {
+    using System;
+    using System.IO;
+    using System.Runtime.InteropServices;
+    using ProtoBuf;
+
     // http://stackoverflow.com/questions/3278827/how-to-convert-a-structure-to-a-byte-array-in-c
-    public class MarshalSerializer<T> : ISerializer<T> where T: struct
+    public class MarshalSerializer<T> : ISerializer<T> where T : struct
     {
         public byte[] Serialize(T value)
         {
-            return StructureToByteArray(value);
+            return this.StructureToByteArray(value);
         }
 
         public T Deserialize(byte[] bytes)
         {
             object value = default(T);
-            ByteArrayToStructure(bytes, ref value);
+            this.ByteArrayToStructure(bytes, ref value);
             return (T)value;
         }
 

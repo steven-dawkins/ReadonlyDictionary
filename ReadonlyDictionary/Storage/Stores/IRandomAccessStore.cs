@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReadonlyDictionary.Storage.Stores
+﻿namespace ReadonlyDictionary.Storage.Stores
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+
     public interface IRandomAccessStore : IDisposable
     {
         T Read<T>(long position) where T : struct;

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReadonlyDictionary.Exceptions
+﻿namespace ReadonlyDictionary.Exceptions
 {
+    using System;
+
     public class NoMagicException : Exception
     {
         public NoMagicException(string filename)

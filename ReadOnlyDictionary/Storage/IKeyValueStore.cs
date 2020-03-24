@@ -1,17 +1,21 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+
     public interface IKeyValueStore<TKey, TValue> : IDisposable
     {
         bool ContainsKey(TKey key);
+
         bool TryGetValue(TKey key, out TValue value);
+
         uint Count { get; }
+
         IEnumerable<TKey> GetKeys();
 
         T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null);
+
         IEnumerable<string> GetAdditionalDataKeys();
     }
 

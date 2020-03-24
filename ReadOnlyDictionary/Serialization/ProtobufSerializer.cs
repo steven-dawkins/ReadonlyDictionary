@@ -1,9 +1,9 @@
-﻿using ProtoBuf;
-using System.IO;
-using System;
-
-namespace ReadonlyDictionary.Serialization
+﻿namespace ReadonlyDictionary.Serialization
 {
+    using System;
+    using System.IO;
+    using ProtoBuf;
+
     public class ProtobufSerializer<T> : ISerializer<T>
     {
         public byte[] Serialize(T value)

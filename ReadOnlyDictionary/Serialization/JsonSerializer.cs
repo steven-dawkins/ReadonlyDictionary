@@ -1,8 +1,7 @@
-﻿using Newtonsoft.Json;
-using System.Text;
-
-namespace ReadonlyDictionary.Serialization
+﻿namespace ReadonlyDictionary.Serialization
 {
+    using System.Text;
+    using Newtonsoft.Json;
 
     public class JsonSerializer<T> : ISerializer<T>
     {
@@ -15,12 +14,12 @@ namespace ReadonlyDictionary.Serialization
 
         public byte[] Serialize(T value)
         {
-            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value, settings));
+            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value, this.settings));
         }
 
         public T Deserialize(byte[] bytes)
         {
-            return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(bytes), settings);
+            return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(bytes), this.settings);
         }
 
         public object GetState()
@@ -28,6 +27,4 @@ namespace ReadonlyDictionary.Serialization
             return null;
         }
     }
-
-    
 }

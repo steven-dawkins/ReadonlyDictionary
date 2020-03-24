@@ -1,18 +1,23 @@
-﻿using ReadonlyDictionary.Exceptions;
-using ReadonlyDictionary.Index;
-using ReadonlyDictionary.Storage.Stores;
-using ReadonlyDictionary.Serialization;
-using ReadonlyDictionary.Storage;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using Newtonsoft.Json;
+    using Polly;
+    using ReadonlyDictionary.Exceptions;
+    using ReadonlyDictionary.Index;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage;
+    using ReadonlyDictionary.Storage.Stores;
+
     public class FileIndexKeyValueStorageBuilder<TKey, TValue>
     {
-        public enum AccessStrategy { Streams, MemoryMapped }
+        public enum AccessStrategy
+        {
+            Streams,
+            MemoryMapped,
+        }
 
         public static FileIndexKeyValueStorage<TKey, TValue> CreateOrOpen(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -60,6 +65,7 @@ namespace ReadonlyDictionary.Storage
                 default:
                     throw new Exception("Unexpected access strategy: " + strategy);
             }
+
             return reader;
         }
 
@@ -77,6 +83,7 @@ namespace ReadonlyDictionary.Storage
                 default:
                     throw new Exception("Unexpected access strategy: " + strategy);
             }
+
             return reader;
         }
 
@@ -89,8 +96,7 @@ namespace ReadonlyDictionary.Storage
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             IIndexSerializer<TKey> indexFactory = null,
             IEnumerable<KeyValuePair<string, object>> additionalMetadata = null,
-            JsonSerializerSettings additionalDataSerializerSettings = null
-            )
+            JsonSerializerSettings additionalDataSerializerSettings = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetCreateReaderForStrategy(initialSize, strategy, fi);
@@ -101,10 +107,17 @@ namespace ReadonlyDictionary.Storage
             string filename,
             AccessStrategy strategy = AccessStrategy.MemoryMapped,
             ISerializer<TValue> serializer = null,
-            IIndexSerializer<TKey> indexFactory = null)
+            IIndexSerializer<TKey> indexFactory = null,
+            Policy policy = null)
         {
             var fi = new FileInfo(filename);
             var reader = GetReaderForStrategy(strategy, fi);
+
+            if (policy != null)
+            {
+                reader = new PolicyStore(reader, policy);
+            }
+
             return new FileIndexKeyValueStorage<TKey, TValue>(fi, reader, serializer, indexFactory);
         }
     }

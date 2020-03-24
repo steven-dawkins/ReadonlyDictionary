@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-using ProtoBuf;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text;
+﻿namespace ReadonlyDictionary.Serialization
+{
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Reflection;
+    using System.Text;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using Newtonsoft.Json.Serialization;
+    using ProtoBuf;
 
-namespace ReadonlyDictionary.Serialization
-{    
     public class JsonFlyweightSerializer<T> : ISerializer<T>
     {
         private readonly JsonSerializerSettings settings;
@@ -19,34 +19,32 @@ namespace ReadonlyDictionary.Serialization
         public JsonFlyweightSerializer()
             : this(new FlyweightDataContractResolver(), new JsonFlyweightConverter<string>())
         {
-
         }
 
         public JsonFlyweightSerializer(object state)
             : this((JsonFlyweightSerializerState)state)
         {
-
         }
 
         public JsonFlyweightSerializer(JsonFlyweightSerializerState state)
             : this(
-                  new FlyweightDataContractResolver(state.Contract), 
+                  new FlyweightDataContractResolver(state.Contract),
                   new JsonFlyweightConverter<string>(state.Converter))
         {
         }
 
         private JsonFlyweightSerializer(
-            FlyweightDataContractResolver contract, 
+            FlyweightDataContractResolver contract,
             JsonFlyweightConverter<string> converter)
         {
-            this.converter = converter;            
+            this.converter = converter;
             this.contract = contract;
             this.settings = new JsonSerializerSettings()
             {
-                Converters = new [] { this.converter },
-                ContractResolver = contract
-            };            
-        }        
+                Converters = new[] { this.converter },
+                ContractResolver = contract,
+            };
+        }
 
         public class JsonFlyweightSerializerState
         {
@@ -54,14 +52,13 @@ namespace ReadonlyDictionary.Serialization
             public readonly JsonFlyweightConverter<string>.JsonFlyweightConverterState Converter;
 
             public JsonFlyweightSerializerState(
-                FlyweightDataContractResolver.FlyweightDataContractResolverState contract, 
+                FlyweightDataContractResolver.FlyweightDataContractResolverState contract,
                 JsonFlyweightConverter<string>.JsonFlyweightConverterState converter)
             {
                 this.Contract = contract;
                 this.Converter = converter;
-            }            
+            }
         }
-
 
         public JsonFlyweightSerializerState Serialize()
         {
@@ -83,7 +80,7 @@ namespace ReadonlyDictionary.Serialization
         {
             var json = Encoding.UTF8.GetString(bytes);
             return JsonConvert.DeserializeObject<T>(json, this.settings);
-        }       
+        }
 
         // borrowed from stackoverflow: http://stackoverflow.com/questions/10966331/two-way-bidirectional-dictionary-in-c/10966684
         public class Map<T1, T2>
@@ -93,7 +90,6 @@ namespace ReadonlyDictionary.Serialization
 
             public Map() : this(new Dictionary<T1, T2>(), new Dictionary<T2, T1>())
             {
-                
             }
 
             public Map(MapState state) : this(state.Forward, state.Reverse)
@@ -119,17 +115,14 @@ namespace ReadonlyDictionary.Serialization
                     this.Forward = forward;
                     this.Reverse = reverse;
                 }
-
             }
 
             public MapState Serialize()
             {
                 return new MapState(
-                    forward: forward,
-                    reverse: reverse
-                );
+                    forward: this.forward,
+                    reverse: this.reverse);
             }
-
 
             public class Indexer<T3, T4>
             {
@@ -139,15 +132,16 @@ namespace ReadonlyDictionary.Serialization
                 {
                     this.dictionary = dictionary;
                 }
+
                 public T4 this[T3 index]
                 {
-                    get { return dictionary[index]; }
-                    set { dictionary[index] = value; }
+                    get { return this.dictionary[index]; }
+                    set { this.dictionary[index] = value; }
                 }
 
                 internal bool ContainsKey(T3 key)
                 {
-                    return dictionary.ContainsKey(key);
+                    return this.dictionary.ContainsKey(key);
                 }
             }
 
@@ -155,17 +149,18 @@ namespace ReadonlyDictionary.Serialization
             {
                 get
                 {
-                    return forward.Count;
+                    return this.forward.Count;
                 }
             }
 
             public void Add(T1 t1, T2 t2)
             {
-                forward.Add(t1, t2);
-                reverse.Add(t2, t1);
+                this.forward.Add(t1, t2);
+                this.reverse.Add(t2, t1);
             }
 
             public Indexer<T1, T2> Forward { get; private set; }
+
             public Indexer<T2, T1> Reverse { get; private set; }
         }
 
@@ -177,7 +172,7 @@ namespace ReadonlyDictionary.Serialization
 
             public FlyweightDataContractResolver()
                 : this(new Map<string, int>())
-            {                
+            {
             }
 
             public FlyweightDataContractResolver(FlyweightDataContractResolverState state)
@@ -205,17 +200,16 @@ namespace ReadonlyDictionary.Serialization
                 }
             }
 
-
             protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
             {
                 var property = base.CreateProperty(member, memberSerialization);
 
-                if (!dictionary.Forward.ContainsKey(property.PropertyName))
+                if (!this.dictionary.Forward.ContainsKey(property.PropertyName))
                 {
-                    dictionary.Add(property.PropertyName, dictionary.Count + 1);
+                    this.dictionary.Add(property.PropertyName, this.dictionary.Count + 1);
                 }
 
-                property.PropertyName = dictionary.Forward[property.PropertyName].ToString();
+                property.PropertyName = this.dictionary.Forward[property.PropertyName].ToString();
 
                 return property;
             }
@@ -226,7 +220,7 @@ namespace ReadonlyDictionary.Serialization
 
                 if (int.TryParse(propertyName, out temp))
                 {
-                    return dictionary.Reverse[temp];
+                    return this.dictionary.Reverse[temp];
                 }
                 else
                 {
@@ -242,8 +236,7 @@ namespace ReadonlyDictionary.Serialization
             public JsonFlyweightConverter()
                 : this(new Map<string, int>())
             {
-                
-            }            
+            }
 
             public JsonFlyweightConverter(JsonFlyweightConverterState state)
             {
@@ -265,14 +258,11 @@ namespace ReadonlyDictionary.Serialization
                 }
             }
 
-
             public JsonFlyweightConverterState Serialize()
             {
                 return new JsonFlyweightConverterState(
-                    dictionary: this.dictionary.Serialize()
-                );
-
-            }            
+                    dictionary: this.dictionary.Serialize());
+            }
 
             protected ConvertType Create(Type objectType, JObject jObject)
             {
@@ -288,8 +278,8 @@ namespace ReadonlyDictionary.Serialization
 
             public override object ReadJson(JsonReader reader,
                                             Type objectType,
-                                             object existingValue,
-                                             JsonSerializer serializer)
+                                            object existingValue,
+                                            JsonSerializer serializer)
             {
                 var index = (long)reader.Value;
 
@@ -300,15 +290,13 @@ namespace ReadonlyDictionary.Serialization
                                            object value,
                                            JsonSerializer serializer)
             {
-                if (!dictionary.Forward.ContainsKey((string)value))
+                if (!this.dictionary.Forward.ContainsKey((string)value))
                 {
-                    dictionary.Add((string)value, dictionary.Count + 1);
+                    this.dictionary.Add((string)value, this.dictionary.Count + 1);
                 }
 
-                writer.WriteValue(dictionary.Forward[(string)value]);
+                writer.WriteValue(this.dictionary.Forward[(string)value]);
             }
         }
     }
-
-    
 }

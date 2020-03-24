@@ -1,46 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462</TargetFrameworks>
+    <TargetFramework>net462</TargetFramework>
     <Version>1.0.1</Version>
-    <ApplicationIcon />
-    <OutputType>Exe</OutputType>
-    <StartupObject />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <SourceLinkCreate>true</SourceLinkCreate>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.0" />
-    <PackageReference Include="Replify" Version="1.1.25" />
-    <PackageReference Include="Serilog" Version="2.9.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SerilogMetrics" Version="2.1.0" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ReadOnlyDictionaryTests\ReadonlyDictionaryTests.csproj" />
-    <ProjectReference Include="..\ReadOnlyDictionary\ReadonlyDictionary.csproj" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
 
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
 
+
   <ItemGroup>
-    <None Update="Scripts\RandomTests.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Replify" Version="1.1.24" />
+    <PackageReference Include="Serilog" Version="2.8.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="SerilogMetrics" Version="2.1.0" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReadOnlyDictionaryTests\ReadonlyDictionaryTests.csproj" />
+    <ProjectReference Include="..\ReadOnlyDictionary\ReadonlyDictionary.csproj" />
+  </ItemGroup>
 
 </Project>

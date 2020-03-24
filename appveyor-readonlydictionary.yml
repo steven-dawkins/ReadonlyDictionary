@@ -1,5 +1,5 @@
-version: 1.1.{build}
-image: Visual Studio 2017
+version: 1.2.{build}
+image: Visual Studio 2019
 configuration: Release
 environment:
   COVERALLS_REPO_TOKEN:
@@ -7,7 +7,9 @@ environment:
 nuget:
   project_feed: true
 before_build:
-- cmd: nuget restore
+- cmd: dotnet restore
+build_script:
+- cmd: dotnet build
 dotnet_csproj:
   patch: true
   file: '**\*.csproj'
@@ -20,6 +22,7 @@ build:
   publish_nuget: true
   publish_nuget_symbols: false
   verbosity: minimal
+  project: ReadOnlyDictionary.sln
 deploy:
 - provider: NuGet
   skip_symbols: false

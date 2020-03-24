@@ -1,19 +1,19 @@
-﻿using ReadonlyDictionary.Exceptions;
-using ReadonlyDictionary.Format;
-using ReadonlyDictionary.Index;
-using ReadonlyDictionary.Storage.Stores;
-using ReadonlyDictionary.Serialization;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using Newtonsoft.Json;
-using System.IO.Compression;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using Newtonsoft.Json;
+    using ReadonlyDictionary.Exceptions;
+    using ReadonlyDictionary.Format;
+    using ReadonlyDictionary.Index;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage.Stores;
+
     public class FileIndexKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>, IDisposable
     {
         private readonly ISerializer<TValue> serializer;
@@ -40,7 +40,7 @@ namespace ReadonlyDictionary.Storage
 
             try
             {
-                WriteData(values, serializer, indexSerializer, count, fi, additionalData, additionalDataSerializerSettings);
+                this.WriteData(values, serializer, indexSerializer, count, fi, additionalData, additionalDataSerializerSettings);
             }
             catch (Exception)
             {
@@ -72,20 +72,20 @@ namespace ReadonlyDictionary.Storage
                 {
                     throw new NoMagicException(fi.FullName);
                 }
+
                 if (header.magic != Header.expectedMagic)
                 {
                     throw new InvalidMagicException(fi.FullName);
                 }
 
-                        if (serializer == null)
-                        {
+                if (serializer == null)
+                {
                     this.serializer = this.ReadSerializerFromHeader(header);
-                        }
-                        else
-                        {
+                }
+                else
+                {
                     this.serializer = serializer;
-                        }
-
+                }
 
                 byte[] indexJsonBytes = reader.ReadArray(header.IndexPosition, header.IndexLength);
 
@@ -116,16 +116,16 @@ namespace ReadonlyDictionary.Storage
             switch (header.SerializationStrategy)
             {
                 case Header.SerializationStrategyEnum.Json:
-                    return new JsonSerializer<TValue>();                    
+                    return new JsonSerializer<TValue>();
                 case Header.SerializationStrategyEnum.Protobuf:
                     return new ProtobufSerializer<TValue>();
                 case Header.SerializationStrategyEnum.JsonFlyWeight:
-                    var stateBytes = reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
+                    var stateBytes = this.reader.ReadArray(header.SerializerJsonStart, header.SerializerJsonLength);
                     var stateJson = Encoding.ASCII.GetString(stateBytes);
                     var state = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonFlyweightSerializer<TValue>.JsonFlyweightSerializerState>(stateJson);
                     return new JsonFlyweightSerializer<TValue>(state);
-                case Header.SerializationStrategyEnum.Custom:                    
-                    throw new ArgumentException("Readonlydictionary uses custom serializer which was not supplied");                    
+                case Header.SerializationStrategyEnum.Custom:
+                    throw new ArgumentException("Readonlydictionary uses custom serializer which was not supplied");
                 default:
                     throw new ArgumentException($"Unexpected header.SerializationStrategy: {header.SerializationStrategy}");
             }
@@ -138,7 +138,7 @@ namespace ReadonlyDictionary.Storage
 
         public bool ContainsKey(TKey key)
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 return this.index.ContainsKey(key);
             }
@@ -148,14 +148,14 @@ namespace ReadonlyDictionary.Storage
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 long index;
                 if (this.index.TryGetValue(key, out index))
                 {
                     var serializedSize = this.reader.ReadInt32(index);
                     byte[] serialized = this.reader.ReadArray(index + sizeof(Int32), serializedSize);
-                    value = serializer.Deserialize(serialized);
+                    value = this.serializer.Deserialize(serialized);
                     return true;
                 }
                 else
@@ -170,7 +170,7 @@ namespace ReadonlyDictionary.Storage
         {
             get
             {
-                lock (mutex)
+                lock (this.mutex)
                 {
                     return this.index.Count;
                 }
@@ -179,7 +179,7 @@ namespace ReadonlyDictionary.Storage
 
         public IEnumerable<TKey> GetKeys()
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 return this.index.Keys;
             }
@@ -187,23 +187,50 @@ namespace ReadonlyDictionary.Storage
 
         public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
         {
-            lock (mutex)
+            try
+            {
+                return this.UnzipAndDeserialize<T2>(name, settings, true);
+            }
+            catch (Exception)
+            {
+                return this.UnzipAndDeserialize<T2>(name, settings, false);
+            }
+        }
+
+        private T2 UnzipAndDeserialize<T2>(string name, JsonSerializerSettings settings, bool unzip)
+        {
+            var json = this.GetAdditionalDataJson(name, unzip);
+
+            if (json == null)
+            {
+                return default(T2);
+            }
+
+            return JsonConvert.DeserializeObject<T2>(json, settings ?? new JsonSerializerSettings());
+        }
+
+        public string GetAdditionalDataJson(string name, bool unzip)
+        {
+            lock (this.mutex)
             {
                 if (!this.customBlockIndex.ContainsKey(name))
                 {
-                    return default(T2);
+                    return null;
                 }
 
                 var block = this.customBlockIndex[name];
 
-                var blockBytes = reader.ReadArray(block.Position, block.Length);
-                return GetMetadataObjectFromBytes<T2>(settings, blockBytes);
+                var blockBytes = this.reader.ReadArray(block.Position, block.Length);
+
+                var blockJson = BytesToJson(blockBytes, unzip);
+
+                return blockJson;
             }
-        }        
+        }
 
         public IEnumerable<string> GetAdditionalDataKeys()
         {
-            lock (mutex)
+            lock (this.mutex)
             {
                 return this.customBlockIndex.Keys;
             }
@@ -240,13 +267,13 @@ namespace ReadonlyDictionary.Storage
                 var value = item.Value;
                 var serialized = serializer.Serialize(value);
 
-                if (position + serialized.Length + sizeof(Int32) > reader.Capacity)
+                if (position + serialized.Length + sizeof(Int32) > this.reader.Capacity)
                 {
-                    this.reader.Resize(reader.Capacity * 2);
+                    this.reader.Resize(this.reader.Capacity * 2);
                 }
 
-                reader.Write(position, serialized.Length);
-                reader.WriteArray(position + sizeof(Int32), serialized);
+                this.reader.Write(position, serialized.Length);
+                this.reader.WriteArray(position + sizeof(Int32), serialized);
 
                 indexValues.Add(new KeyValuePair<TKey, long>(item.Key, position));
 
@@ -285,16 +312,16 @@ namespace ReadonlyDictionary.Storage
             // Resize to include index
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength);
 
-            reader.WriteArray(header.IndexPosition, indexBytes);
-            reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
+            this.reader.WriteArray(header.IndexPosition, indexBytes);
+            this.reader.WriteArray(header.IndexPosition + indexBytes.Length, serializerJsonBytes);
 
             var c = additionalBlocks.Select(a => new
             {
                 Name = a.Key,
-                Bytes = GetMetadataBytes(a)
+                Bytes = GetMetadataBytes(a),
             }).ToArray();
 
-            var blocks = c.Select(content => ToCustomDataBlock(content.Name, content.Bytes)).ToArray();
+            var blocks = c.Select(content => this.ToCustomDataBlock(content.Name, content.Bytes)).ToArray();
 
             // Resize down to include custom blocks
             this.reader.Resize(header.IndexPosition + header.IndexLength + header.SerializerJsonLength + blocks.Length * sizeof(CustomDataBlock) + blocks.Sum(b => b.Length));
@@ -314,16 +341,16 @@ namespace ReadonlyDictionary.Storage
             header.customBlockCount = blocks.Length;
             header.Count = count;
             header.magic = Header.expectedMagic;
-            reader.Write(0, ref header);
+            this.reader.Write(0, ref header);
 
-            reader.Flush();
+            this.reader.Flush();
         }
 
         private static byte[] GetMetadataBytes(KeyValuePair<string, object> a)
         {
             try
             {
-                //return Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value));
+                // return Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(a.Value));
                 return ZipStr(JsonConvert.SerializeObject(a.Value));
             }
             catch (Exception e)
@@ -331,6 +358,7 @@ namespace ReadonlyDictionary.Storage
                 throw new Exception($"Error serializing metadata: {a.Key}", e);
             }
         }
+
         private static byte[] ZipStr(string str)
         {
             using (MemoryStream output = new MemoryStream())
@@ -344,10 +372,25 @@ namespace ReadonlyDictionary.Storage
                         writer.Write(str);
                         writer.Flush();
                     }
-                    output.Flush();                    
+
+                    output.Flush();
                 }
 
                 return output.ToArray();
+            }
+        }
+
+        private static string BytesToJson(byte[] blockBytes, bool unzip)
+        {
+            if (unzip)
+            {
+                var blockJson = UnZip(blockBytes);
+                return blockJson;
+            }
+            else
+            {
+                var blockJson = Encoding.ASCII.GetString(blockBytes);
+                return blockJson;
             }
         }
 
@@ -363,22 +406,8 @@ namespace ReadonlyDictionary.Storage
                     {
                         input.Flush();
                         return reader.ReadToEnd();
-                    }                    
+                    }
                 }
-            }
-        }
-
-        private static T2 GetMetadataObjectFromBytes<T2>(JsonSerializerSettings settings, byte[] blockBytes)
-        {           
-            try
-            {
-                var blockJson = UnZip(blockBytes);
-                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
-            }
-            catch(Exception e)
-            {
-                var blockJson = Encoding.ASCII.GetString(blockBytes);
-                return JsonConvert.DeserializeObject<T2>(blockJson, settings ?? new JsonSerializerSettings());
             }
         }
 
@@ -398,7 +427,7 @@ namespace ReadonlyDictionary.Storage
 
         public override string ToString()
         {
-            return $"Serializer: {serializer} Count: {index.Count} Reader: {reader}";
+            return $"Serializer: {this.serializer} Count: {this.index.Count} Reader: {this.reader}";
         }
     }
 }

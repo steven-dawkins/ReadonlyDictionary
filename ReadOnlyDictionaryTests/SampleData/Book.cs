@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
-using ProtoBuf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReadonlyDictionaryTests.SampleData
+﻿namespace ReadonlyDictionaryTests.SampleData
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using Newtonsoft.Json;
+    using ProtoBuf;
+
     [Serializable]
     [ProtoContract]
     public struct Book
@@ -25,7 +25,6 @@ namespace ReadonlyDictionaryTests.SampleData
         public Book(string name, string name2, string name3)
             : this()
         {
-
             if (String.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Empty name", "name");

@@ -1,12 +1,12 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ReadonlyDictionary.Storage
+﻿namespace ReadonlyDictionary.Storage
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using Newtonsoft.Json;
+
     public class InMemoryKeyValueStorage<TKey, TValue> : IKeyValueStore<TKey, TValue>
     {
         private readonly Dictionary<TKey, TValue> index;
@@ -44,7 +44,7 @@ namespace ReadonlyDictionary.Storage
 
         public T2 GetAdditionalData<T2>(string name, JsonSerializerSettings settings = null)
         {
-            if (!additionalMetadata.ContainsKey(name))
+            if (!this.additionalMetadata.ContainsKey(name))
             {
                 return default(T2);
             }

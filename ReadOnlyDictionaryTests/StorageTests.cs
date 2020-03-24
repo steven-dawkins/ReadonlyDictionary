@@ -1,24 +1,23 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
-using System.Linq;
-using ReadonlyDictionaryTests.SampleData;
-using ReadonlyDictionary.Serialization;
-using ReadonlyDictionary.Storage;
-using System.IO;
-using System.Diagnostics;
-
-using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
-
-namespace ReadonlyDictionaryTests
+﻿namespace ReadonlyDictionaryTests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using ReadonlyDictionary.Serialization;
+    using ReadonlyDictionary.Storage;
+    using ReadonlyDictionaryTests.SampleData;
+    using BookStorage = ReadonlyDictionary.Storage.FileIndexKeyValueStorageBuilder<System.Guid, ReadonlyDictionaryTests.SampleData.Book>;
+
     public abstract class TestBase
     {
         [TestInitialize]
         public void TestInitialize()
         {
-            randomData = RandomDataGenerator.RandomData(100000).ToArray();
-            StorageInitalize();
+            this.randomData = RandomDataGenerator.RandomData(100000).ToArray();
+            this.StorageInitalize();
         }
 
         [TestCleanup]
@@ -35,28 +34,28 @@ namespace ReadonlyDictionaryTests
         [TestMethod]
         public void ExerciseRandomData()
         {
-            Assert.AreEqual((uint)randomData.Length, storage.Count);
+            Assert.AreEqual((uint)this.randomData.Length, this.storage.Count);
 
             var timer = new Stopwatch();
             timer.Start();
 
             // warmup pass
-            for (int i = 0; i < randomData.Length; i++)
+            for (int i = 0; i < this.randomData.Length; i++)
             {
-                var item = randomData[i];
-                Assert.AreEqual(item.Value, storage.Get(item.Key));
-                Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
+                var item = this.randomData[i];
+                Assert.AreEqual(item.Value, this.storage.Get(item.Key));
+                Assert.AreEqual(default(Book), this.storage.Get(Guid.NewGuid()));
             }
 
             Console.WriteLine(this.GetType().Name + " pass1 " + timer.ElapsedMilliseconds + "ms");
 
             timer.Restart();
 
-            for (int i = 0; i < randomData.Length; i++)
+            for (int i = 0; i < this.randomData.Length; i++)
             {
-                var item = randomData[i];
-                Assert.AreEqual(item.Value, storage.Get(item.Key));
-                Assert.AreEqual(default(Book), storage.Get(Guid.NewGuid()));
+                var item = this.randomData[i];
+                Assert.AreEqual(item.Value, this.storage.Get(item.Key));
+                Assert.AreEqual(default(Book), this.storage.Get(Guid.NewGuid()));
             }
 
             Console.WriteLine(this.GetType().Name + "pass2 " + timer.ElapsedMilliseconds + "ms");
@@ -79,7 +78,7 @@ namespace ReadonlyDictionaryTests
 
         public override void StorageInitalize()
         {
-            storage = new InMemoryKeyValueStorage<Guid, Book>(randomData);
+            this.storage = new InMemoryKeyValueStorage<Guid, Book>(this.randomData);
         }
     }
 
@@ -89,15 +88,12 @@ namespace ReadonlyDictionaryTests
             ISerializer<Book> serializer,
             BookStorage.AccessStrategy strategy = BookStorage.AccessStrategy.MemoryMapped)
         {
-            using (var temp = BookStorage.Create(randomData, "temp.raw", 1 * 1024 * 1024, serializer, randomData.LongLength, strategy))
+            using (var temp = BookStorage.Create(this.randomData, "temp.raw", 1 * 1024 * 1024, serializer, this.randomData.LongLength, strategy))
             {
-
             }
 
-            storage = BookStorage.Open("temp.raw", serializer: serializer);
+            this.storage = BookStorage.Open("temp.raw", serializer: serializer);
         }
-
-
     }
 
     [TestClass]
@@ -107,7 +103,7 @@ namespace ReadonlyDictionaryTests
         {
             var serializer = new JsonSerializer<Book>();
 
-            WriteStorage(serializer);
+            this.WriteStorage(serializer);
         }
     }
 
@@ -115,10 +111,10 @@ namespace ReadonlyDictionaryTests
     public class FileIndexKeyValueStorageJsonFlyweight : FileIndexKeyValueStorageBase
     {
         public override void StorageInitalize()
-        {            
+        {
             var serializer = new JsonFlyweightSerializer<Book>();
 
-            WriteStorage(serializer);
+            this.WriteStorage(serializer);
         }
 
         [TestMethod]
@@ -131,15 +127,14 @@ namespace ReadonlyDictionaryTests
 
             using (var temp = BookStorage.Create(data, "temp2.raw", 1 * 1024, serializer, 100000))
             {
-
             }
-            
-            using (var reader = BookStorage.Open("temp2.raw", strategy, null))            
+
+            using (var reader = BookStorage.Open("temp2.raw", strategy, null))
             {
                 for (int i = 0; i < data.Length; i++)
                 {
                     var item = data[i];
-                    Assert.AreEqual(item.Value, reader.Get(item.Key));                    
+                    Assert.AreEqual(item.Value, reader.Get(item.Key));
                 }
             }
         }
@@ -152,7 +147,7 @@ namespace ReadonlyDictionaryTests
         {
             var serializer = new ProtobufSerializer<Book>();
 
-            WriteStorage(serializer);
+            this.WriteStorage(serializer);
         }
     }
 
@@ -163,8 +158,8 @@ namespace ReadonlyDictionaryTests
 
         public override void StorageInitalize()
         {
-            WriteStorage(serializer, BookStorage.AccessStrategy.Streams);
-        }        
+            this.WriteStorage(serializer, BookStorage.AccessStrategy.Streams);
+        }
 
         [TestMethod]
         public void TestMetadata()
@@ -172,21 +167,20 @@ namespace ReadonlyDictionaryTests
             var additionalMetadata = new KeyValuePair<string, object>[]
             {
                 new KeyValuePair<string, object>("Lorem", "Ipsum"),
-                new KeyValuePair<string, object>("A", new Book("The Hobbit", "", ""))
+                new KeyValuePair<string, object>("A", new Book("The Hobbit", "", "")),
             };
 
             var values = RandomDataGenerator.RandomData(1000);
 
             using (var temp = BookStorage.Create(values, "temp_metadata.raw", 1 * 1024, serializer, 100000, additionalMetadata: additionalMetadata))
             {
-
             }
 
             using (var temp = BookStorage.Open("temp_metadata.raw", serializer: serializer))
             {
                 Assert.AreEqual(additionalMetadata[0].Value, temp.GetAdditionalData<string>(additionalMetadata[0].Key));
                 Assert.AreEqual(additionalMetadata[1].Value, temp.GetAdditionalData<Book>(additionalMetadata[1].Key));
-            }            
+            }
         }
     }
 }
