@@ -52,8 +52,46 @@ namespace ReadonlyDictionary.Index
         private Dictionary<string, long> FastDeserialize(string json)
         {
             var weight = 0.0308686625;
+            var estimatedItemCount = (int)(json.Length * weight);
 
-            var result = new Dictionary<string, long>((int)(json.Length * weight));
+            var items = GetListOfItems(json, estimatedItemCount);
+
+            var itemCount = items.Count();
+            Console.WriteLine("saving " + (estimatedItemCount - itemCount));
+            var result = new Dictionary<string, long>(itemCount);
+
+            foreach (var item in items)
+            {
+                result.Add(item.Key, item.Value);
+            }
+
+            return result;
+
+
+            //var weight = 0.0308686625;
+
+            //var result = new Dictionary<string, long>((int)(json.Length * weight));
+            //var reader = new JsonTextReader(new StringReader(json));
+            //string key = null;
+            //while (reader.Read())
+            //{
+            //    if (reader.TokenType == JsonToken.PropertyName)
+            //    {
+            //        key = reader.Value.ToString();
+            //    }
+
+            //    if (reader.TokenType == JsonToken.Integer)
+            //    {
+            //        result.Add(key, (long)reader.Value);
+            //    }
+            //}
+
+            //return result;
+        }
+
+        private static IEnumerable<KeyValuePair<string, long>> GetListOfItems(string json, int estimatedItemCount)
+        {
+            var items = new List<KeyValuePair<string, long>>(estimatedItemCount);
             var reader = new JsonTextReader(new StringReader(json));
             string key = null;
             while (reader.Read())
@@ -65,10 +103,9 @@ namespace ReadonlyDictionary.Index
 
                 if (reader.TokenType == JsonToken.Integer)
                 {
-                    result.Add(key, (long)reader.Value);
+                    yield return new KeyValuePair<string, long>(key, (long)reader.Value);
                 }
             }
-            return result;
         }
 
         public byte[] Serialize()

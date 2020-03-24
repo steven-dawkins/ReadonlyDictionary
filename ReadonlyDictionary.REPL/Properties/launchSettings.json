@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ReadonlyDictionary.REPL": {
+      "commandName": "Project",
+      "commandLineArgs": "Scripts/RandomTests.js"
+    }
+  }
+}

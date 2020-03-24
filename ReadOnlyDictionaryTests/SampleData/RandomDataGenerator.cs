@@ -24,6 +24,14 @@ namespace ReadonlyDictionaryTests.SampleData
                 yield return new KeyValuePair<Guid, Book>(Guid.NewGuid(), new Book("Book - " + i, "Name2:" + i, "Name3:" + i));
             }
         }
+
+        public static IEnumerable<KeyValuePair<string, Book>> RandomDataStringyKeys(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                yield return new KeyValuePair<string, Book>(Guid.NewGuid().ToString(), new Book("Book - " + i, "Name2:" + i, "Name3:" + i));
+            }
+        }
     }
 
 }
