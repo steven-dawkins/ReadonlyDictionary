@@ -21,7 +21,7 @@ namespace ReadonlyDictionary.REPL
         {
             this.logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.ColoredConsole()
+                .WriteTo.Console()
                 .CreateLogger();
         }
 
