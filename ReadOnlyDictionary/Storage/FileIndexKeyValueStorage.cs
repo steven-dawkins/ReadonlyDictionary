@@ -21,7 +21,14 @@
         private readonly IIndex<TKey> index;
 
         private IRandomAccessStore reader;
+        private readonly CompressionMethod compression;
         private readonly Dictionary<string, CustomDataBlock> customBlockIndex;
+
+        public enum CompressionMethod
+        {
+            NEWTONSOFT,
+            SYSTEMTEXTJSON,
+        }
 
         public FileIndexKeyValueStorage(
             IEnumerable<KeyValuePair<TKey, TValue>> values,
@@ -32,11 +39,13 @@
             IRandomAccessStore reader,
             IIndexSerializer<TKey> indexSerializer = null,
             IEnumerable<KeyValuePair<string, object>> additionalData = null,
-            JsonSerializerSettings additionalDataSerializerSettings = null)
+            JsonSerializerSettings additionalDataSerializerSettings = null,
+            CompressionMethod compression = CompressionMethod.NEWTONSOFT)
         {
             this.serializer = serializer;
             indexSerializer = indexSerializer ?? new DictionaryIndexSerializer<TKey>();
             this.reader = reader;
+            this.compression = compression;
 
             try
             {
@@ -101,7 +110,9 @@
                     blocks.Add(block);
                 }
 
-                this.customBlockIndex = blocks.ToDictionary(b => new string(b.Name).Trim());
+                this.customBlockIndex = blocks
+                    .GroupBy(b => new string(b.Name).Trim())
+                    .ToDictionary(grp => grp.Key, b => b.First());
             }
             catch (Exception)
             {
@@ -206,7 +217,14 @@
                 return default(T2);
             }
 
-            return JsonConvert.DeserializeObject<T2>(json, settings ?? new JsonSerializerSettings());
+            if (this.compression == CompressionMethod.SYSTEMTEXTJSON)
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<T2>(json);
+            }
+            else
+            {
+                return JsonConvert.DeserializeObject<T2>(json, settings ?? new JsonSerializerSettings());
+            }
         }
 
         public string GetAdditionalDataJson(string name, bool unzip)

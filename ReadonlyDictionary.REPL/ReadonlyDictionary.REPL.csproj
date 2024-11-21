@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <Version>1.0.1</Version>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
